@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   TextField,
   Button,
@@ -39,7 +39,8 @@ import {
   Zoom,
   Fade,
   Grow,
-  Checkbox
+  Checkbox,
+  useTheme
 } from "@mui/material";
 import { Container, createTheme, ThemeProvider } from "@mui/material";
 import { 
@@ -61,7 +62,8 @@ import {
   Apple,
   ShopTwo,
   Home,
-  Launch
+  Launch,
+  Language as LanguageIcon
 } from "@mui/icons-material";
 import axios from "axios";
 import { keyframes } from '@mui/system';
@@ -84,6 +86,10 @@ export default function SingularDebugger() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [useMockData, setUseMockData] = useState(false); // 내부 테스트용 (UI에서는 숨김 처리)
   const [appIcon, setAppIcon] = useState(null);
+  const [language, setLanguage] = useState(localStorage.getItem('language') || 'ko');
+  const [logoIsLoading, setLogoIsLoading] = useState(true);
+
+  const theme = useTheme();
 
   // Singular 로고 Base64 인코딩 (로고 이미지를 직접 소스 코드에 포함)
   const singularLogoBase64 = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvfg-L9ImP6SiqLRxJc03e_jSvaR25KybCHw&s";
@@ -140,70 +146,6 @@ export default function SingularDebugger() {
       ]
     }
   ];
-
-  const theme = createTheme({
-    palette: {
-      mode: darkMode ? 'dark' : 'light',
-      primary: {
-        main: '#2962ff',
-      },
-      secondary: {
-        main: '#ff5722',
-      },
-      background: {
-        default: darkMode ? '#121212' : '#f5f5f5',
-        paper: darkMode ? '#1e1e1e' : '#ffffff',
-      },
-    },
-    typography: {
-      fontFamily: [
-        '-apple-system',
-        'BlinkMacSystemFont',
-        '"Segoe UI"',
-        'Roboto',
-        '"Helvetica Neue"',
-        'Arial',
-        'sans-serif',
-      ].join(','),
-      h5: {
-        fontWeight: 600,
-      },
-      button: {
-        fontWeight: 600,
-      },
-    },
-    shape: {
-      borderRadius: 8,
-    },
-    components: {
-      MuiCard: {
-        styleOverrides: {
-          root: {
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-            borderRadius: 8,
-          },
-        },
-      },
-      MuiButton: {
-        styleOverrides: {
-          root: {
-            textTransform: 'none',
-            borderRadius: 8,
-            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-          },
-        },
-      },
-      MuiTableRow: {
-        styleOverrides: {
-          root: {
-            '&:nth-of-type(odd)': {
-              backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)',
-            },
-          },
-        },
-      },
-    },
-  });
 
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -1126,6 +1068,69 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
     }
   `;
 
+  // 언어 관련 텍스트 객체
+  const translations = {
+    ko: {
+      title: 'Singular 어트리뷰션 디버거',
+      apiKeyLabel: 'API Key',
+      deviceIdLabel: 'Device ID',
+      keyspaceLabel: 'Keyspace',
+      searchButton: '조회하기',
+      noResults: '결과가 없습니다',
+      loading: '로딩 중...',
+      error: '오류가 발생했습니다',
+      copySuccess: '복사되었습니다',
+      sortAsc: '오름차순 정렬',
+      sortDesc: '내림차순 정렬',
+      touchData: '터치 정보',
+      campaignData: '캠페인 정보',
+      storeLink: '스토어에서 보기',
+      appHeaderTitle: '앱 정보'
+    },
+    en: {
+      title: 'Singular Attribution Debugger',
+      apiKeyLabel: 'API Key',
+      deviceIdLabel: 'Device ID',
+      keyspaceLabel: 'Keyspace',
+      searchButton: 'Search',
+      noResults: 'No results',
+      loading: 'Loading...',
+      error: 'An error occurred',
+      copySuccess: 'Copied',
+      sortAsc: 'Sort Ascending',
+      sortDesc: 'Sort Descending',
+      touchData: 'Touch Data',
+      campaignData: 'Campaign Data',
+      storeLink: 'View in Store',
+      appHeaderTitle: 'App Information'
+    },
+    zh: {
+      title: 'Singular 归因调试器',
+      apiKeyLabel: 'API 密钥',
+      deviceIdLabel: '设备 ID',
+      keyspaceLabel: '密钥空间',
+      searchButton: '搜索',
+      noResults: '没有结果',
+      loading: '加载中...',
+      error: '发生错误',
+      copySuccess: '已复制',
+      sortAsc: '升序排序',
+      sortDesc: '降序排序',
+      touchData: '触点数据',
+      campaignData: '活动数据',
+      storeLink: '在商店中查看',
+      appHeaderTitle: '应用信息'
+    }
+  };
+
+  // 현재 선택된 언어에 대한 번역 텍스트
+  const t = translations[language];
+
+  // 언어 변경 시 로컬스토리지에 저장
+  useEffect(() => {
+    localStorage.setItem('language', language);
+  }, [language]);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -1176,7 +1181,7 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                 }} 
               />
               <Typography variant="h5" color="primary" fontWeight="bold">
-                어트리뷰션 디버거
+                {t.title}
               </Typography>
             </Box>
             <Box flexGrow={1} />
@@ -1200,11 +1205,41 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                 </Button>
               </Tooltip>
             )}
-            <Tooltip title={darkMode ? "라이트 모드로 전환" : "다크 모드로 전환"}>
-              <IconButton onClick={toggleDarkMode} color="inherit" sx={{ mr: 1 }}>
+            <Box display="flex" alignItems="center">
+              {/* 언어 선택 드롭다운 */}
+              <FormControl sx={{ minWidth: 100, mr: 1 }}>
+                <Select
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  displayEmpty
+                  size="small"
+                  sx={{ 
+                    color: darkMode ? 'white' : 'inherit',
+                    '.MuiOutlinedInput-notchedOutline': { 
+                      borderColor: darkMode ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0, 0, 0, 0.23)' 
+                    },
+                    '.MuiSvgIcon-root': { 
+                      color: darkMode ? 'white' : 'inherit' 
+                    }
+                  }}
+                  startAdornment={
+                    <LanguageIcon sx={{ mr: 0.5 }} fontSize="small" />
+                  }
+                >
+                  <MenuItem value="ko">한국어</MenuItem>
+                  <MenuItem value="en">English</MenuItem>
+                  <MenuItem value="zh">中文</MenuItem>
+                </Select>
+              </FormControl>
+              
+              <IconButton
+                onClick={toggleDarkMode}
+                color="inherit"
+                size="large"
+              >
                 {darkMode ? <Brightness7 /> : <Brightness4 />}
               </IconButton>
-            </Tooltip>
+            </Box>
           </Toolbar>
         </AppBar>
         
@@ -1354,11 +1389,7 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                             margin="normal"
                             value={apiKey}
                             onChange={(e) => setApiKey(e.target.value)}
-                            InputProps={{
-                              startAdornment: (
-                                <Key color="action" sx={{ mr: 1 }} />
-                              ),
-                            }}
+                            sx={{ mb: 2 }}
                           />
                         </Box>
                         
@@ -1367,15 +1398,15 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                             <InputLabel id="keyspace-label">Keyspace</InputLabel>
                             <Select
                               labelId="keyspace-label"
+                              id="keyspace"
                               value={keyspace}
-                              label="Keyspace"
-                              onChange={handleKeyspaceChange}
+                              label={t.keyspaceLabel}
+                              onChange={(e) => setKeyspace(e.target.value)}
                             >
-                              <MenuItem value="" disabled>선택해주세요</MenuItem>
                               <MenuItem value="idfa">IDFA</MenuItem>
                               <MenuItem value="idfv">IDFV</MenuItem>
-                              <MenuItem value="android_advertising_id">AIFA (GAID)</MenuItem>
-                              <MenuItem value="custom">SDID</MenuItem>
+                              <MenuItem value="android_advertising_id">Android Advertising ID</MenuItem>
+                              <MenuItem value="fire_advertising_id">Fire Advertising ID</MenuItem>
                             </Select>
                           </FormControl>
                           <Tooltip title={keyspaceTooltip} placement="right" arrow>
@@ -1395,11 +1426,7 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                             onChange={handleDeviceIdChange}
                             error={!!deviceIdError}
                             helperText={deviceIdError}
-                            InputProps={{
-                              startAdornment: (
-                                <Fingerprint color="action" sx={{ mr: 1 }} />
-                              ),
-                            }}
+                            sx={{ mb: 2 }}
                           />
                         </Box>
 
@@ -1485,8 +1512,8 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                         transition: 'background-color 0.3s ease'
                       }}
                     >
-                      <Typography variant="h6">
-                        {result ? "어트리뷰션 결과" : "결과"}
+                      <Typography variant="h6" component="div" fontWeight="medium" mb={1}>
+                        {t.appHeaderTitle}
                       </Typography>
                     </Box>
                     
