@@ -1,13 +1,13 @@
-# Singular Attribution Debugger
+# Singular Testing Console
 
-Singular Attribution Debugger는 Singular 어트리뷰션 API를 간편하게 테스트하고 디버깅할 수 있는 도구입니다.
+Singular Testing Console은 Singular 어트리뷰션 API를 간편하게 테스트하고 디버깅할 수 있는 도구입니다.
 
 ## 기능
 
 - Singular 디바이스 디버깅 API 연동 (https://link.singular.net/api/v1/debug/device)
 - API Key, Device ID, Keyspace 입력 폼
 - 에러 처리 및 사용자 친화적인 메시지
-- 다크모드 지원
+- 개선된 다크모드 UI (그라데이션 배경, 어두운 테마에 최적화된 컴포넌트)
 - 로컬 저장 기능 (마지막 조회 결과 자동 저장/복원)
 - 이벤트 결과 정렬 기능 (오름차순/내림차순)
 - 앱 아이콘 자동 로딩 (Play Store / App Store)
@@ -35,6 +35,16 @@ https://peppy-pothos-aeba8b.netlify.app/
 - 선택한 언어로 모든 UI 텍스트가 자동 변환됩니다.
 - 언어 선택은 로컬 스토리지에 저장되어 다음 방문 시에도 유지됩니다.
 
+## 다크모드 UI
+
+- 오른쪽 상단의 토글 버튼으로 다크모드와 라이트모드 간 전환이 가능합니다.
+- 다크모드는 다음과 같은 개선 사항을 포함합니다:
+  - 그라데이션 백그라운드 (linear-gradient 적용)
+  - 투명도가 적용된 카드 컴포넌트
+  - 다크모드에 최적화된 아이콘 및 텍스트 색상
+  - 어두운 배경에 잘 보이는 입력 필드와 선택 메뉴
+  - 더 부드러운, 눈의 피로를 줄이는 색조 사용
+
 ## 날짜/시간 및 화폐 지역화
 
 - 언어 설정에 따라 날짜/시간 형식이 자동으로 변경됩니다:
@@ -60,3 +70,11 @@ https://peppy-pothos-aeba8b.netlify.app/
 - Axios
 - http-proxy-middleware (CORS 이슈 해결)
 - Netlify (배포)
+
+## 업데이트 내역
+
+- 2023-03-25: 다크모드 UI 개선
+- 2023-03-22: Singular Testing Console로 이름 변경
+- 2023-03-20: 다국어 지원 추가 (한국어, 영어, 중국어)
+- 2023-03-15: 스토어 링크 기능 추가
+- 2023-03-10: 초기 버전 출시
