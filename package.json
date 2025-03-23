@@ -2,6 +2,7 @@
   "name": "singular-attribution-debugger",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://skang1310.github.io/SingularTestingConsole/",
   "dependencies": {
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
@@ -16,7 +17,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "CI=false react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
