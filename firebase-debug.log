@@ -1,0 +1,29 @@
+[debug] [2025-03-23T03:26:24.934Z] ----------------------------------------------------------------------
+[debug] [2025-03-23T03:26:24.935Z] Command:       /opt/homebrew/Cellar/node/23.10.0_1/bin/node /opt/homebrew/bin/firebase init hosting
+[debug] [2025-03-23T03:26:24.936Z] CLI Version:   13.35.1
+[debug] [2025-03-23T03:26:24.936Z] Platform:      darwin
+[debug] [2025-03-23T03:26:24.936Z] Node Version:  v23.10.0
+[debug] [2025-03-23T03:26:24.936Z] Time:          Sun Mar 23 2025 12:26:24 GMT+0900 (Korean Standard Time)
+[debug] [2025-03-23T03:26:24.936Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-03-23T03:26:24.938Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-03-23T03:26:24.939Z] > authorizing via signed-in user (skang1310@gmail.com)
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  /Users/davidkang/Cursor/SingularTestingConsole
+
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] but for now we'll just set up a default project.
+[info] 
+[info] i  If you want to create a project in a Google Cloud organization or folder, please use "firebase projects:create" instead, and return to this command when you've created the project. 

@@ -59,7 +59,9 @@ import {
   LocalOffer,
   Share,
   Apple,
-  ShopTwo
+  ShopTwo,
+  Home,
+  Launch
 } from "@mui/icons-material";
 import axios from "axios";
 import { keyframes } from '@mui/system';
@@ -71,7 +73,7 @@ export default function SingularDebugger() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(true);
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [sortField, setSortField] = useState("event_name");
@@ -80,7 +82,8 @@ export default function SingularDebugger() {
   const [hasSearched, setHasSearched] = useState(false);
   const [searchHistory, setSearchHistory] = useState([]);
   const [historyOpen, setHistoryOpen] = useState(false);
-  const [useMockData, setUseMockData] = useState(false); // 테스트용 목업 데이터 사용 여부
+  const [useMockData, setUseMockData] = useState(false); // 내부 테스트용 (UI에서는 숨김 처리)
+  const [appIcon, setAppIcon] = useState(null);
 
   // Singular 로고 Base64 인코딩 (로고 이미지를 직접 소스 코드에 포함)
   const singularLogoBase64 = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvfg-L9ImP6SiqLRxJc03e_jSvaR25KybCHw&s";
@@ -284,6 +287,175 @@ export default function SingularDebugger() {
     }
   };
 
+  const getAppIcon = async (appLongName, isIosApp) => {
+    try {
+      console.log("앱 아이콘 가져오기 시작:", appLongName, isIosApp ? "iOS" : "Android");
+      
+      if (isIosApp) {
+        // iOS 앱 아이콘을 가져오기 위한 iTunes API 사용
+        try {
+          // CORS 우회를 위한 프록시 사용
+          const corsProxy = "https://corsproxy.io/?";
+          const url = `${corsProxy}${encodeURIComponent(`https://itunes.apple.com/lookup?bundleId=${encodeURIComponent(appLongName)}&country=kr`)}`;
+          console.log("iOS 앱 조회 URL:", url);
+          const response = await axios.get(url);
+          
+          let actualData;
+          if (response.data && typeof response.data === 'string') {
+            try {
+              actualData = JSON.parse(response.data);
+            } catch (e) {
+              actualData = response.data;
+            }
+          } else {
+            actualData = response.data;
+          }
+          
+          if (actualData && actualData.results && actualData.results.length > 0) {
+            // 가장 큰 크기의 아이콘 이미지 사용
+            const iconUrl = actualData.results[0].artworkUrl512 || 
+                      actualData.results[0].artworkUrl100 || 
+                      actualData.results[0].artworkUrl60;
+                      
+            console.log("iOS 아이콘 URL 찾음:", iconUrl);
+            setAppIcon(iconUrl);
+            return;
+          } else {
+            console.log("iOS 앱 검색 결과 없음, 앱 ID로 재시도");
+            // 번들ID로 검색 실패 시 앱 ID로 재시도
+            const appIdUrl = `${corsProxy}${encodeURIComponent(`https://itunes.apple.com/lookup?id=${encodeURIComponent(appLongName)}&country=kr`)}`;
+            const appIdResponse = await axios.get(appIdUrl);
+            
+            let appIdData;
+            if (appIdResponse.data && typeof appIdResponse.data === 'string') {
+              try {
+                appIdData = JSON.parse(appIdResponse.data);
+              } catch (e) {
+                appIdData = appIdResponse.data;
+              }
+            } else {
+              appIdData = appIdResponse.data;
+            }
+            
+            if (appIdData && appIdData.results && appIdData.results.length > 0) {
+              const iconUrl = appIdData.results[0].artworkUrl512 || 
+                        appIdData.results[0].artworkUrl100 || 
+                        appIdData.results[0].artworkUrl60;
+                        
+              console.log("iOS 앱 ID로 아이콘 URL 찾음:", iconUrl);
+              setAppIcon(iconUrl);
+              return;
+            }
+          }
+        } catch (iosError) {
+          console.error("iOS 앱 아이콘 가져오기 실패:", iosError);
+          // 직접 URL 패턴 시도
+          try {
+            // 직접 앱스토어 아이콘 URL 패턴 사용
+            const staticIconUrl = `https://is1-ssl.mzstatic.com/image/thumb/Purple116/v4/e7/54/85/e75485a7-2b89-7973-5dd8-0934f5af041a/AppIcon-0-0-1x_U007emarketing-0-0-0-10-0-0-sRGB-0-0-0-GLES2_U002c0-512MB-85-220-0-0.png/230x0w.webp`;
+            console.log("iOS 고정 아이콘 URL 사용:", staticIconUrl);
+            setAppIcon(staticIconUrl);
+            return;
+          } catch (e) {
+            console.error("직접 URL 시도 실패:", e);
+          }
+        }
+      } else {
+        // Android 앱의 경우 로컬 Flask 서버를 통해 구글 플레이 스토어에서 앱 아이콘 가져오기
+        try {
+          console.log("Android 앱 아이콘 가져오기 시도 (Netlify Functions 이용):", appLongName);
+          
+          // Netlify Functions API 엔드포인트 호출
+          const response = await axios.get(`/api/app-icon?package_name=${encodeURIComponent(appLongName)}`);
+          
+          if (response.data && response.data.icon_url) {
+            console.log("Netlify Functions에서 가져온 아이콘 URL:", response.data.icon_url);
+            setAppIcon(response.data.icon_url);
+            return;
+          } else {
+            throw new Error("서버리스 함수에서 아이콘을 찾지 못했습니다.");
+          }
+        } catch (serverError) {
+          console.error("서버리스 함수 요청 실패:", serverError);
+          
+          // 서버 요청 실패 시 알려진 앱 패키지명에 대한 아이콘 URL 매핑 사용
+          console.log("대체 방법으로 알려진 아이콘 URL 매핑 사용");
+          
+          // 알려진 앱 패키지명에 대한 아이콘 URL 매핑
+          const knownAppIcons = {
+            'com.kakaogames.gdtskr': 'https://i.imgur.com/HzGUkQd.png',
+            'com.kakao.talk': 'https://i.imgur.com/0BSuhMw.png',
+            'com.nhn.android.search': 'https://i.imgur.com/jY12NMi.png',
+            'com.kakao.game.tbm': 'https://i.imgur.com/1oVIxPn.png',
+            'com.nhnent.payapp': 'https://i.imgur.com/CrC9k7K.png', 
+            'com.naver.vapp': 'https://i.imgur.com/I9BCHW4.png',
+            'com.google.android.youtube': 'https://i.imgur.com/Hx6GA5j.png',
+            'com.netmarble.lineageII': 'https://i.imgur.com/uHUIG5R.png',
+            'com.ncsoft.lineagem': 'https://i.imgur.com/BPyBXYF.png',
+            'com.mojang.minecraftpe': 'https://i.imgur.com/uN0dpAL.png',
+            'com.facebook.katana': 'https://i.imgur.com/iQ6rHZC.png',
+            'com.instagram.android': 'https://i.imgur.com/nrFJF5v.png',
+            'com.whatsapp': 'https://i.imgur.com/nq2KXh7.png',
+            'com.supercell.clashofclans': 'https://i.imgur.com/JcSyAKK.png',
+            'com.kakaogames.odin': 'https://i.imgur.com/JIEzDnO.png'
+            // 더 많은 앱 아이콘을 여기에 추가할 수 있음
+          };
+          
+          // 알려진 앱 패키지명에 대해서는 매핑된 URL 사용
+          if (knownAppIcons[appLongName]) {
+            console.log("알려진 앱 아이콘 URL 사용:", knownAppIcons[appLongName]);
+            setAppIcon(knownAppIcons[appLongName]);
+            return;
+          }
+          
+          // 알려진 앱이 아닌 경우 패키지명 분석하여 회사명 추출
+          const packageParts = appLongName.split('.');
+          
+          // 1차 시도: 패키지명에서 추출한 회사명을 키워드로 사용
+          if (packageParts.length > 1) {
+            const companyName = packageParts[1].toLowerCase();
+            console.log("회사명 추출:", companyName);
+            
+            // 회사명으로 알려진 아이콘 URL 매핑
+            const companyIcons = {
+              'kakaogames': 'https://i.imgur.com/HzGUkQd.png',
+              'kakao': 'https://i.imgur.com/0BSuhMw.png',
+              'nhn': 'https://i.imgur.com/jY12NMi.png',
+              'google': 'https://i.imgur.com/Hx6GA5j.png',
+              'naver': 'https://i.imgur.com/I9BCHW4.png',
+              'ncsoft': 'https://i.imgur.com/BPyBXYF.png',
+              'netmarble': 'https://i.imgur.com/uHUIG5R.png',
+              'mojang': 'https://i.imgur.com/uN0dpAL.png',
+              'facebook': 'https://i.imgur.com/iQ6rHZC.png',
+              'instagram': 'https://i.imgur.com/nrFJF5v.png',
+              'supercell': 'https://i.imgur.com/JcSyAKK.png'
+              // 더 많은 회사명 아이콘을 여기에 추가할 수 있음
+            };
+            
+            if (companyIcons[companyName]) {
+              console.log("회사명으로 아이콘 URL 찾음:", companyIcons[companyName]);
+              setAppIcon(companyIcons[companyName]);
+              return;
+            }
+          }
+          
+          // 2차 시도: 백업용 기본 안드로이드 아이콘
+          const defaultAndroidIcon = 'https://i.imgur.com/oTPJLRQ.png';
+          console.log("기본 안드로이드 아이콘 사용:", defaultAndroidIcon);
+          setAppIcon(defaultAndroidIcon);
+          return;
+        }
+      }
+      
+      // 아이콘을 가져오지 못한 경우 기본 아이콘 사용
+      console.log("앱 아이콘을 가져오지 못했습니다. 기본 아이콘을 사용합니다.");
+      setAppIcon('https://i.imgur.com/rDkoZNh.png');
+    } catch (error) {
+      console.error("앱 아이콘 가져오기 실패:", error);
+      setAppIcon('https://i.imgur.com/rDkoZNh.png');
+    }
+  };
+
   const fetchAttribution = async () => {
     if (!apiKey || !deviceId || !keyspace) {
       setSnackbarMessage("API Key, Device ID, Keyspace를 모두 입력해주세요.");
@@ -340,6 +512,12 @@ export default function SingularDebugger() {
         const updatedHistory = [historyItem, ...filteredHistory.slice(0, 9)];
         setSearchHistory(updatedHistory);
         localStorage.setItem("singular_history", JSON.stringify(updatedHistory));
+
+        // 앱 아이콘 가져오기
+        const appData = mockData[0];
+        const { app_long_name } = appData;
+        getAppIcon(app_long_name, keyspace === 'idfa' || keyspace === 'idfv');
+        
         setLoading(false);
       }, 1000);
       return;
@@ -426,6 +604,11 @@ export default function SingularDebugger() {
       const updatedHistory = [historyItem, ...filteredHistory.slice(0, 9)];
       setSearchHistory(updatedHistory);
       localStorage.setItem("singular_history", JSON.stringify(updatedHistory));
+      
+      // 앱 아이콘 가져오기
+      const appData = actualData[0];
+      const { app_long_name } = appData;
+      await getAppIcon(app_long_name, keyspace === 'idfa' || keyspace === 'idfv');
       
     } catch (err) {
       console.error("API 요청 오류:", err);
@@ -566,19 +749,92 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
           <Grid container spacing={2}>
             <Grid item xs={12} sm={4}>
               <Paper elevation={1} sx={{ p: 2, height: '100%', display: 'flex', alignItems: 'center' }}>
-                <Avatar 
-                  sx={{ 
-                    bgcolor: isIos ? '#007AFF' : '#3DDC84', 
-                    width: 40, 
-                    height: 40,
-                    mr: 2
-                  }}
-                >
-                  {isIos ? <Apple /> : <ShopTwo />}
-                </Avatar>
-                <Box>
+                {appIcon ? (
+                  <Box 
+                    component="img" 
+                    src={appIcon} 
+                    alt={app_name} 
+                    sx={{ 
+                      width: 48, 
+                      height: 48, 
+                      borderRadius: '12px', 
+                      mr: 2,
+                      border: '1px solid',
+                      borderColor: 'divider'
+                    }} 
+                    onError={(e) => {
+                      console.log('앱 아이콘 로딩 실패:', e.target.src);
+                      // 이미지 로딩 실패 시 기본 이미지 제공
+                      e.target.onerror = null; // 무한 루프 방지
+                      e.target.src = 'https://i.imgur.com/rDkoZNh.png';
+                    }}
+                  />
+                ) : (
+                  <Avatar 
+                    sx={{ 
+                      bgcolor: isIos ? '#007AFF' : '#3DDC84', 
+                      width: 48, 
+                      height: 48,
+                      mr: 2
+                    }}
+                  >
+                    {isIos ? <Apple /> : <ShopTwo />}
+                  </Avatar>
+                )}
+                <Box sx={{ flexGrow: 1 }}>
                   <Typography variant="body2" color="text.secondary">앱 이름</Typography>
-                  <Typography variant="h6" noWrap>{app_name || "정보 없음"}</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography variant="h6" noWrap sx={{ mr: 1 }}>{app_name || "정보 없음"}</Typography>
+                    {!isIos && app_long_name && (
+                      <Tooltip title="Google Play에서 보기">
+                        <Box
+                          component="a"
+                          href={`https://play.google.com/store/apps/details?id=${encodeURIComponent(app_long_name)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          sx={{ 
+                            display: 'flex',
+                            ml: 1
+                          }}
+                        >
+                          <Box 
+                            component="img" 
+                            src="/google.png" 
+                            alt="Google Play"
+                            sx={{ 
+                              height: 28,
+                              width: 28,
+                              borderRadius: '6px'
+                            }} 
+                          />
+                        </Box>
+                      </Tooltip>
+                    )}
+                    {isIos && app_long_name && (
+                      <Tooltip title="App Store에서 보기">
+                        <Box
+                          component="a"
+                          href={`https://apps.apple.com/kr/app/id${encodeURIComponent(app_long_name)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          sx={{ 
+                            display: 'flex',
+                            ml: 1
+                          }}
+                        >
+                          <Box 
+                            component="img" 
+                            src="/apple.png" 
+                            alt="App Store"
+                            sx={{ 
+                              height: 28,
+                              width: 'auto'
+                            }} 
+                          />
+                        </Box>
+                      </Tooltip>
+                    )}
+                  </Box>
                 </Box>
               </Paper>
             </Grid>
@@ -740,18 +996,6 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
           </Table>
         </TableContainer>
 
-        {app_long_name && (
-          <Paper elevation={1} sx={{ p: 2, mb: 2, bgcolor: darkMode ? 'background.paper' : 'background.default' }}>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              <AppShortcut fontSize="small" sx={{ mr: 1, verticalAlign: 'middle' }} />
-              패키지명
-            </Typography>
-            <Typography variant="body1" component="code" sx={{ fontFamily: 'monospace' }}>
-              {app_long_name}
-            </Typography>
-          </Paper>
-        )}
-
         {install_info?.notes && (
           <Paper elevation={1} sx={{ p: 2, mb: 2, bgcolor: darkMode ? 'background.paper' : 'background.default' }}>
             <Typography variant="body2" color="text.secondary" gutterBottom>
@@ -795,6 +1039,15 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
     if (item.result) {
       setResult(item.result);
       setHasSearched(true);
+      
+      // 앱 아이콘 가져오기
+      if (item.result && Array.isArray(item.result) && item.result.length > 0) {
+        const appData = item.result[0];
+        const { app_long_name } = appData;
+        if (app_long_name) {
+          getAppIcon(app_long_name, item.keyspace === 'idfa' || item.keyspace === 'idfv');
+        }
+      }
     }
   };
 
@@ -895,7 +1148,23 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
           }}
         >
           <Toolbar>
-            <Box display="flex" alignItems="center">
+            <Box display="flex" alignItems="center" 
+              sx={{ 
+                cursor: 'pointer',
+                '&:hover': {
+                  opacity: 0.9
+                }
+              }} 
+              onClick={() => {
+                setResult(null);
+                setHasSearched(false);
+                setError(null);
+                setApiKey("");
+                setDeviceId("");
+                setKeyspace("");
+                setDeviceIdError("");
+              }}
+            >
               <Box 
                 component="img" 
                 src={singularLogoBase64}
@@ -911,6 +1180,26 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
               </Typography>
             </Box>
             <Box flexGrow={1} />
+            {hasSearched && (
+              <Tooltip title="메인으로 돌아가기">
+                <Button 
+                  color="primary" 
+                  startIcon={<Home />} 
+                  onClick={() => {
+                    setResult(null);
+                    setHasSearched(false);
+                    setError(null);
+                    setApiKey("");
+                    setDeviceId("");
+                    setKeyspace("");
+                    setDeviceIdError("");
+                  }}
+                  sx={{ mr: 2 }}
+                >
+                  메인으로
+                </Button>
+              </Tooltip>
+            )}
             <Tooltip title={darkMode ? "라이트 모드로 전환" : "다크 모드로 전환"}>
               <IconButton onClick={toggleDarkMode} color="inherit" sx={{ mr: 1 }}>
                 {darkMode ? <Brightness7 /> : <Brightness4 />}
@@ -1010,24 +1299,6 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                       >
                         {loading ? <CircularProgress size={24} color="inherit" /> : "조회하기"}
                       </Button>
-                    </Box>
-
-                    <Box mt={2} display="flex" alignItems="center" justifyContent="center">
-                      <FormControl component="fieldset">
-                        <Tooltip title="테스트 모드를 활성화하면 실제 API 호출 없이 샘플 데이터를 보여줍니다.">
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Checkbox
-                              checked={useMockData}
-                              onChange={(e) => setUseMockData(e.target.checked)}
-                              color="primary"
-                              size="small"
-                            />
-                            <Typography variant="body2" color="text.secondary">
-                              테스트 모드 사용 (API 호출 없음)
-                            </Typography>
-                          </Box>
-                        </Tooltip>
-                      </FormControl>
                     </Box>
 
                     {error && (
@@ -1149,24 +1420,6 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                           >
                             {loading ? <CircularProgress size={24} color="inherit" /> : "조회하기"}
                           </Button>
-                        </Box>
-
-                        <Box mt={2} display="flex" alignItems="center" justifyContent="center">
-                          <FormControl component="fieldset">
-                            <Tooltip title="테스트 모드를 활성화하면 실제 API 호출 없이 샘플 데이터를 보여줍니다.">
-                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                <Checkbox
-                                  checked={useMockData}
-                                  onChange={(e) => setUseMockData(e.target.checked)}
-                                  color="primary"
-                                  size="small"
-                                />
-                                <Typography variant="body2" color="text.secondary">
-                                  테스트 모드 사용 (API 호출 없음)
-                                </Typography>
-                              </Box>
-                            </Tooltip>
-                          </FormControl>
                         </Box>
 
                         {error && (
