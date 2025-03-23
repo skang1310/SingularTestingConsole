@@ -75,7 +75,14 @@ export default function SingularDebugger() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode, setDarkMode] = useState(() => {
+    // 시스템 다크모드 설정 감지
+    const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    // 로컬 스토리지에 저장된 사용자 설정 확인
+    const savedPreference = localStorage.getItem('darkMode');
+    // 저장된 설정이 있으면 그 값 사용, 없으면 시스템 설정 사용
+    return savedPreference !== null ? savedPreference === 'true' : systemPrefersDark;
+  });
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [sortField, setSortField] = useState("event_name");
@@ -256,7 +263,12 @@ export default function SingularDebugger() {
 
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const toggleDarkMode = () => setDarkMode((prev) => !prev);
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    // 사용자 설정을 로컬 스토리지에 저장
+    localStorage.setItem('darkMode', newMode.toString());
+  };
   const toggleHistory = () => setHistoryOpen(!historyOpen);
 
   useEffect(() => {
@@ -790,7 +802,7 @@ export default function SingularDebugger() {
 
     return (
       <>
-        <Box sx={{ mb: 3, p: 2, bgcolor: darkMode ? 'background.paper' : 'background.default', borderRadius: 2 }}>
+        <Box sx={{ mb: 3, p: 2, bgcolor: darkMode ? 'rgba(30, 41, 59, 0.5)' : 'background.default', borderRadius: 2 }}>
           <Grid container spacing={2}>
             <Grid item xs={12} sm={4}>
               <Paper elevation={1} sx={{ p: 2, height: '100%', display: 'flex', alignItems: 'center' }}>
@@ -955,17 +967,22 @@ export default function SingularDebugger() {
             borderRadius: theme.shape.borderRadius,
             overflow: 'hidden',
             mb: 3,
+            bgcolor: darkMode ? 'rgba(30, 41, 59, 0.7)' : 'white',
             '& .MuiTableRow-root:hover': {
               backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(103, 80, 164, 0.05)'
+            },
+            '& .MuiTableCell-root': {
+              color: darkMode ? 'rgba(255, 255, 255, 0.9)' : 'inherit',
+              borderBottomColor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
             }
           }}
         >
           <Table size="medium">
             <TableHead>
               <TableRow sx={{ 
-                bgcolor: 'primary.main',
+                bgcolor: darkMode ? 'rgba(25, 50, 100, 0.8)' : 'primary.main',
                 '&:hover': {
-                  bgcolor: 'primary.main',
+                  bgcolor: darkMode ? 'rgba(35, 60, 110, 0.9)' : 'primary.dark',
                 },
                 textAlign: 'center'
               }}>
@@ -986,10 +1003,18 @@ export default function SingularDebugger() {
               ) : (
                 sortedEvents.map((event, index) => (
                   <TableRow 
-                    key={index} 
+                    key={`event-${index}`}
                     sx={{ 
-                      bgcolor: index % 2 === 0 ? darkMode ? 'rgba(255, 255, 255, 0.03)' : 'rgba(103, 80, 164, 0.03)' : 'inherit',
-                      '&:last-child td, &:last-child th': { border: 0 },
+                      bgcolor: index % 2 === 0 
+                        ? darkMode 
+                          ? 'rgba(30, 40, 60, 0.5)' 
+                          : 'rgba(240, 240, 250, 0.5)' 
+                        : darkMode 
+                          ? 'rgba(25, 35, 55, 0.3)' 
+                          : 'white',
+                      '&:hover': {
+                        bgcolor: darkMode ? 'rgba(40, 50, 70, 0.7)' : 'rgba(230, 230, 250, 0.7)'
+                      }
                     }}
                   >
                     <TableCell>
@@ -1042,9 +1067,16 @@ export default function SingularDebugger() {
         </TableContainer>
 
         {install_info?.notes && (
-          <Paper elevation={1} sx={{ p: 2, mb: 2, bgcolor: darkMode ? 'background.paper' : 'background.default' }}>
-            <Typography variant="body2" color="text.secondary" gutterBottom>
-              <LocalOffer fontSize="small" sx={{ mr: 1, verticalAlign: 'middle' }} />
+          <Paper elevation={1} sx={{ 
+            p: 2, 
+            mb: 2, 
+            bgcolor: darkMode ? 'rgba(30, 41, 59, 0.7)' : 'background.default',
+            color: darkMode ? 'white' : 'inherit',
+            borderRadius: '12px',
+            border: darkMode ? '1px solid rgba(255, 255, 255, 0.05)' : 'none'
+          }}>
+            <Typography variant="body2" color={darkMode ? "rgba(255, 255, 255, 0.7)" : "text.secondary"} gutterBottom>
+              <LocalOffer fontSize="small" sx={{ mr: 1, verticalAlign: 'middle', color: darkMode ? "rgba(255, 255, 255, 0.7)" : "inherit" }} />
               {t.notes}
             </Typography>
             <Typography variant="body1">
@@ -1086,23 +1118,12 @@ export default function SingularDebugger() {
   };
 
   const formatCurrency = (value) => {
-    if (!value) return "-";
+    if (!value) return '-';
     
-    // 선택된 언어에 따라 다른 통화 형식 적용
-    let locale = 'ko-KR';
-    let currency = 'KRW';
-    
-    if (language === 'en') {
-      locale = 'en-US';
-      currency = 'USD';
-    } else if (language === 'zh') {
-      locale = 'zh-CN';
-      currency = 'CNY';
-    }
-    
-    return new Intl.NumberFormat(locale, { 
-      style: 'currency', 
-      currency: currency,
+    // 화폐 표시를 생략하고 숫자만 표시
+    return new Intl.NumberFormat('en-US', {
+      style: 'decimal',
+      minimumFractionDigits: 0,
       maximumFractionDigits: 2
     }).format(value);
   };
@@ -1300,15 +1321,47 @@ export default function SingularDebugger() {
     }
   ];
 
+  // 시스템 다크모드 감지 설정 - useEffect 추가
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    
+    // 시스템 테마 변경 감지 핸들러
+    const handleChange = (e) => {
+      // 사용자가 직접 설정한 경우에는 시스템 설정 무시
+      const userPreference = localStorage.getItem('darkMode');
+      if (userPreference === null) {
+        setDarkMode(e.matches);
+      }
+    };
+    
+    // 이벤트 리스너 등록
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleChange);
+    } else {
+      // 이전 브라우저 지원
+      mediaQuery.addListener(handleChange);
+    }
+    
+    // 컴포넌트 언마운트 시 이벤트 리스너 제거
+    return () => {
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener('change', handleChange);
+      } else {
+        mediaQuery.removeListener(handleChange);
+      }
+    };
+  }, []);
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Box sx={{ 
         minHeight: '100vh', 
         background: darkMode 
-          ? 'linear-gradient(to bottom, #121212, #1e1e1e)' 
-          : 'linear-gradient(to bottom, #f5f5f5, #ffffff)',
-        transition: 'background 0.3s ease'
+          ? 'linear-gradient(135deg, #0a0e16 0%, #151d2a 100%)' 
+          : 'linear-gradient(135deg, #eef2ff 0%, #ffffff 100%)',
+        color: darkMode ? '#ffffff' : '#1a1a2e',
+        transition: 'all 0.3s ease'
       }}>
         <AppBar 
           position="static" 
@@ -1318,7 +1371,8 @@ export default function SingularDebugger() {
             transition: 'all 0.3s ease',
             backdropFilter: 'blur(8px)',
             borderBottom: '1px solid',
-            borderColor: 'divider'
+            borderColor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'divider',
+            background: darkMode ? 'rgba(15, 18, 25, 0.8)' : 'rgba(255, 255, 255, 0.8)'
           }}
         >
           <Toolbar>
@@ -1664,7 +1718,11 @@ export default function SingularDebugger() {
                       minHeight: isMobile ? '500px' : '600px',
                       display: 'flex',
                       flexDirection: 'column',
-                      overflow: 'hidden'
+                      overflow: 'hidden',
+                      background: darkMode ? 'rgba(15, 23, 42, 0.8)' : 'white',
+                      boxShadow: darkMode ? '0 8px 32px rgba(0, 0, 0, 0.5)' : '0 8px 32px rgba(0, 0, 0, 0.1)',
+                      border: darkMode ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
+                      borderRadius: '12px'
                     }}
                   >
                     <Box 
