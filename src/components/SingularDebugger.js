@@ -38,7 +38,8 @@ import {
   Chip,
   Zoom,
   Fade,
-  Grow
+  Grow,
+  Checkbox
 } from "@mui/material";
 import { Container, createTheme, ThemeProvider } from "@mui/material";
 import { 
@@ -79,12 +80,63 @@ export default function SingularDebugger() {
   const [hasSearched, setHasSearched] = useState(false);
   const [searchHistory, setSearchHistory] = useState([]);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [useMockData, setUseMockData] = useState(false); // 테스트용 목업 데이터 사용 여부
 
   // Singular 로고 Base64 인코딩 (로고 이미지를 직접 소스 코드에 포함)
   const singularLogoBase64 = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvfg-L9ImP6SiqLRxJc03e_jSvaR25KybCHw&s";
   
   // Singular 아이콘 Base64 인코딩
   const singularIconBase64 = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMCAzMCI+PHBhdGggZD0iTTEwLjQgMTEuMkMxMC40IDE3LjUgMCAxNy4zIDAgMjMuN2MwIDQuNCAzIDYuMiA2LjMgNi4yIDUuNCAwIDguNy00LjEgOC43LTlWN2g1LjF2MTMuOWMwIDEwLjEtNy42IDE0LTQuOSAyMy4xLTEuOS0uNi0xNC00LjQtMTQtMTNDMS4zIDIzLjcgMTIgMTQuNCAxMiAxMS4yYzAtMi42LTEuNi0zLTkuMy0yQzMuMiAxLjMgMTEuNSAwIDE2LjEgMGM0LjUgMCA3LjYgMi44IDcuNiA2LjIgMCAzLTIgNS01IDVzLTYtMi02LTVjMC0yLjktMS40LTQuOC0yLjMtNS4ydjUuMmMwIDIuNyAyLjIgNC45IDQuOSA0LjlzNS0yLjIgNS00LjlWMEgyNlY2SDEwLjQiIGZpbGw9IiMwMDM5Y2IiLz48L3N2Zz4=";
+
+  // 목업 데이터 - 테스트용
+  const mockData = [
+    {
+      app_name: "샘플 앱",
+      app_long_name: "com.example.sampleapp",
+      install_info: {
+        network: "Facebook",
+        install_time: "2023-04-15T12:30:45Z",
+        notes: "샘플 앱 어트리뷰션 데이터입니다."
+      },
+      events: [
+        {
+          event_name: "purchase",
+          event_count: 5,
+          first_event_time: "2023-04-16T10:20:30Z",
+          last_event_time: "2023-04-20T15:45:22Z",
+          revenue_ltv: 25000
+        },
+        {
+          event_name: "app_open",
+          event_count: 20,
+          first_event_time: "2023-04-15T13:05:12Z",
+          last_event_time: "2023-04-21T08:30:15Z",
+          revenue_ltv: 0
+        },
+        {
+          event_name: "tutorial_complete",
+          event_count: 1,
+          first_event_time: "2023-04-15T14:22:18Z",
+          last_event_time: "2023-04-15T14:22:18Z",
+          revenue_ltv: 0
+        },
+        {
+          event_name: "registration",
+          event_count: 1,
+          first_event_time: "2023-04-15T13:45:30Z",
+          last_event_time: "2023-04-15T13:45:30Z",
+          revenue_ltv: 0
+        },
+        {
+          event_name: "subscription",
+          event_count: 2,
+          first_event_time: "2023-04-18T09:15:42Z",
+          last_event_time: "2023-04-19T18:30:10Z",
+          revenue_ltv: 15000
+        }
+      ]
+    }
+  ];
 
   const theme = createTheme({
     palette: {
@@ -265,66 +317,121 @@ export default function SingularDebugger() {
       apiKeyspace = "AIFA";
     }
     
+    // 테스트 모드일 경우 목업 데이터 사용
+    if (useMockData || deviceId === "test" || deviceId === "테스트") {
+      setTimeout(() => {
+        setResult(mockData);
+        
+        // 검색 히스토리에 추가
+        const historyItem = {
+          apiKey,
+          deviceId: formattedDeviceId,
+          keyspace,
+          timestamp: new Date().toISOString(),
+          result: mockData
+        };
+        
+        // 중복 제거: 동일한 keyspace와 deviceId를 가진 항목 필터링
+        const filteredHistory = searchHistory.filter(
+          item => !(item.keyspace === keyspace && item.deviceId === formattedDeviceId)
+        );
+        
+        // 최신 항목 추가 및 최대 10개 유지
+        const updatedHistory = [historyItem, ...filteredHistory.slice(0, 9)];
+        setSearchHistory(updatedHistory);
+        localStorage.setItem("singular_history", JSON.stringify(updatedHistory));
+        setLoading(false);
+      }, 1000);
+      return;
+    }
+    
     const singularApiUrl = `https://api.singular.net/api/attribution/attribution_details?api_key=${apiKey}&device_id=${formattedDeviceId}&keyspace=${apiKeyspace}`;
 
     try {
-      // allOrigins 프록시 사용
-      const encodedUrl = encodeURIComponent(singularApiUrl);
-      const proxyUrl = `https://api.allorigins.win/get?url=${encodedUrl}`;
+      // 다양한 CORS 프록시 서비스 시도
+      const corsProxies = [
+        `https://api.allorigins.win/get?url=${encodeURIComponent(singularApiUrl)}`,
+        `https://cors-anywhere.herokuapp.com/${singularApiUrl}`,
+        `https://corsproxy.io/?${encodeURIComponent(singularApiUrl)}`,
+        `https://proxy.cors.sh/${singularApiUrl}`
+      ];
       
-      console.log("CORS Proxy를 통한 API 요청 시작:", {
-        proxyUrl,
-        originalUrl: singularApiUrl,
-        keyspace: apiKeyspace,
-        deviceId: formattedDeviceId
-      });
+      console.log("다양한 CORS 프록시를 통한 API 요청 시작");
       
-      const response = await axios.get(proxyUrl, {
-        timeout: 30000
-      });
+      let response = null;
+      let error = null;
       
-      console.log("CORS Proxy 응답 수신:", response.status);
-      
-      // allOrigins는 응답을 contents 필드에 JSON 문자열로 감싸서 반환
-      if (response.data && response.data.contents) {
+      // 프록시 순차적으로 시도
+      for (const proxyUrl of corsProxies) {
         try {
-          const actualData = JSON.parse(response.data.contents);
-          setResult(actualData);
+          console.log(`프록시 시도: ${proxyUrl}`);
+          response = await axios.get(proxyUrl, {
+            timeout: 30000,
+            headers: {
+              'Content-Type': 'application/json',
+              'x-requested-with': 'XMLHttpRequest'
+            }
+          });
           
-          // 검색 히스토리에 추가
-          const historyItem = {
-            apiKey,
-            deviceId: formattedDeviceId,
-            keyspace,
-            timestamp: new Date().toISOString(),
-            result: actualData
-          };
-          
-          // 중복 제거: 동일한 keyspace와 deviceId를 가진 항목 필터링
-          const filteredHistory = searchHistory.filter(
-            item => !(item.keyspace === keyspace && item.deviceId === formattedDeviceId)
-          );
-          
-          // 최신 항목 추가 및 최대 10개 유지
-          const updatedHistory = [historyItem, ...filteredHistory.slice(0, 9)];
-          setSearchHistory(updatedHistory);
-          localStorage.setItem("singular_history", JSON.stringify(updatedHistory));
-          
+          if (response.status === 200) {
+            console.log(`프록시 성공: ${proxyUrl}`);
+            break;
+          }
+        } catch (e) {
+          console.error(`프록시 실패: ${proxyUrl}`, e);
+          error = e;
+        }
+      }
+      
+      if (!response) {
+        throw error || new Error("모든 CORS 프록시 요청이 실패했습니다.");
+      }
+      
+      console.log("CORS 프록시 응답 수신:", response.status);
+      
+      // 응답 데이터 처리: allOrigins 형식 또는 직접 응답
+      let actualData;
+      if (response.data && response.data.contents) {
+        // allOrigins 형식 응답
+        try {
+          actualData = JSON.parse(response.data.contents);
         } catch (parseErr) {
           console.error("JSON 파싱 오류:", parseErr);
-          setError({
-            message: "응답 데이터 파싱 오류",
-            detail: "API 응답을 처리하는 중 오류가 발생했습니다: " + parseErr.message
-          });
+          throw new Error("응답 데이터 파싱 오류: " + parseErr.message);
         }
+      } else if (response.data) {
+        // 직접 응답
+        actualData = response.data;
       } else {
-        throw new Error("프록시 서버에서 유효한 데이터를 반환하지 않았습니다.");
+        throw new Error("응답에 유효한 데이터가 없습니다.");
       }
+      
+      setResult(actualData);
+      
+      // 검색 히스토리에 추가
+      const historyItem = {
+        apiKey,
+        deviceId: formattedDeviceId,
+        keyspace,
+        timestamp: new Date().toISOString(),
+        result: actualData
+      };
+      
+      // 중복 제거: 동일한 keyspace와 deviceId를 가진 항목 필터링
+      const filteredHistory = searchHistory.filter(
+        item => !(item.keyspace === keyspace && item.deviceId === formattedDeviceId)
+      );
+      
+      // 최신 항목 추가 및 최대 10개 유지
+      const updatedHistory = [historyItem, ...filteredHistory.slice(0, 9)];
+      setSearchHistory(updatedHistory);
+      localStorage.setItem("singular_history", JSON.stringify(updatedHistory));
+      
     } catch (err) {
-      console.error("CORS proxy error:", err);
+      console.error("API 요청 오류:", err);
       setError({ 
-        message: "CORS 프록시 요청 실패", 
-        detail: err.message || "프록시 서버를 통한 요청이 실패했습니다." 
+        message: "API 요청 실패", 
+        detail: err.message || "요청이 실패했습니다." 
       });
     } finally {
       setLoading(false);
@@ -905,6 +1012,24 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                       </Button>
                     </Box>
 
+                    <Box mt={2} display="flex" alignItems="center" justifyContent="center">
+                      <FormControl component="fieldset">
+                        <Tooltip title="테스트 모드를 활성화하면 실제 API 호출 없이 샘플 데이터를 보여줍니다.">
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Checkbox
+                              checked={useMockData}
+                              onChange={(e) => setUseMockData(e.target.checked)}
+                              color="primary"
+                              size="small"
+                            />
+                            <Typography variant="body2" color="text.secondary">
+                              테스트 모드 사용 (API 호출 없음)
+                            </Typography>
+                          </Box>
+                        </Tooltip>
+                      </FormControl>
+                    </Box>
+
                     {error && (
                       <Alert severity="error" sx={{ mt: 2 }}>
                         <Typography variant="subtitle2">{error.message}</Typography>
@@ -1024,6 +1149,24 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                           >
                             {loading ? <CircularProgress size={24} color="inherit" /> : "조회하기"}
                           </Button>
+                        </Box>
+
+                        <Box mt={2} display="flex" alignItems="center" justifyContent="center">
+                          <FormControl component="fieldset">
+                            <Tooltip title="테스트 모드를 활성화하면 실제 API 호출 없이 샘플 데이터를 보여줍니다.">
+                              <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                <Checkbox
+                                  checked={useMockData}
+                                  onChange={(e) => setUseMockData(e.target.checked)}
+                                  color="primary"
+                                  size="small"
+                                />
+                                <Typography variant="body2" color="text.secondary">
+                                  테스트 모드 사용 (API 호출 없음)
+                                </Typography>
+                              </Box>
+                            </Tooltip>
+                          </FormControl>
                         </Box>
 
                         {error && (
