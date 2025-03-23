@@ -68,7 +68,7 @@ import {
 import axios from "axios";
 import { keyframes } from '@mui/system';
 
-export default function SingularDebugger() {
+export default function SingularDebugger({ systemTheme }) {
   const [apiKey, setApiKey] = useState("");
   const [deviceId, setDeviceId] = useState("");
   const [keyspace, setKeyspace] = useState("");
@@ -96,13 +96,40 @@ export default function SingularDebugger() {
   const [language, setLanguage] = useState(localStorage.getItem('language') || 'ko');
   const [logoIsLoading, setLogoIsLoading] = useState(true);
 
-  const theme = useTheme();
+  const theme = useMemo(() => createTheme({
+    palette: {
+      mode: darkMode ? 'dark' : 'light',
+      primary: {
+        main: '#1976d2',
+      },
+      secondary: {
+        main: '#dc004e',
+      },
+      background: {
+        default: darkMode ? '#0a0e16' : '#f5f5f5',
+        paper: darkMode ? '#151d2a' : '#ffffff',
+      },
+      text: {
+        primary: darkMode ? '#ffffff' : '#1a1a2e',
+        secondary: darkMode ? '#b0b0b0' : '#666666',
+      },
+    },
+    components: {
+      MuiCssBaseline: {
+        styleOverrides: {
+          body: {
+            transition: 'all 0.3s ease',
+          },
+        },
+      },
+    },
+  }), [darkMode]);
 
   // Singular 로고 Base64 인코딩 (로고 이미지를 직접 소스 코드에 포함)
   const singularLogoBase64 = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvfg-L9ImP6SiqLRxJc03e_jSvaR25KybCHw&s";
   
   // Singular 아이콘 Base64 인코딩
-  const singularIconBase64 = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMCAzMCI+PHBhdGggZD0iTTEwLjQgMTEuMkMxMC40IDE3LjUgMCAxNy4zIDAgMjMuN2MwIDQuNCAzIDYuMiA2LjMgNi4yIDUuNCAwIDguNy00LjEgOC43LTlWN2g1LjF2MTMuOWMwIDEwLjEtNy42IDE0LTQuOSAyMy4xLTEuOS0uNi0xNC00LjQtMTQtMTNDMS4zIDIzLjcgMTIgMTQuNCAxMiAxMS4yYzAtMi42LTEuNi0zLTkuMy0yQzMuMiAxLjMgMTEuNSAwIDE2LjEgMGM0LjUgMCA3LjYgMi44IDcuNiA2LjIgMCAzLTIgNS01IDVzLTYtMi02LTVjMC0yLjktMS40LTQuOC0yLjMtNS4ydjUuMmMwIDIuNyAyLjIgNC45IDQuOSA0LjlzNS0yLjIgNS00LjlWMEgyNlY2SDEwLjQiIGZpbGw9IiMwMDM5Y2IiLz48L3N2Zz4=";
+  const singularIconBase64 = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMCAzMCI+PHBhdGggZD0iTTEwLjQgMTEuMkMxMC40IDE3LjUgMCAxNy4zIDAgMjMuN2MwIDQuNCAzIDYuMiA2LjMgNi4yIDUuNCAwIDguNy00LjEgOC43LTlVN2g1LjF2MTMuOWMwIDEwLjEtNy42IDE0LTQuOSAyMy4xLTEuOS0uNi0xNC00LjQtMTQtMTNDMS4zIDIzLjcgMTEgMTQuNCAxMiAxMS4yYzAtMi42LTEuNi0zLTkuMy0yQzMuMiAxLjMgMTEuNSAwIDE2LjEgMGM0LjUgMCA3LjYgMi44IDcuNiA2LjIgMCAzLTIgNS01IDVzLTYtMi42LTYtNS4ydjUuMmMwIDIuNyAyLjIgNC45IDQuOSA0LjlzNS0yLjIgNS00LjlWMEgyNlY2SDEwLjQiIGZpbGw9IiMwMDM5Y2IiLz48L3N2Zz4=";
 
   // 언어 관련 텍스트 객체
   const translations = {
@@ -154,7 +181,8 @@ export default function SingularDebugger() {
       appName: '앱 이름',
       selectKeyspace: '선택해주세요',
       androidDevice: 'Android',
-      iOSDevice: 'iOS'
+      iOSDevice: 'iOS',
+      footer: '2025 DK'
     },
     en: {
       title: 'Singular Attribution Debugger',
@@ -199,18 +227,19 @@ export default function SingularDebugger() {
       htmlResponseError: 'Received HTML response. Please check the API address.',
       keyspaceTooltip: 'The type of advertising ID:\nIDFA: Used in iOS devices (Identifier for Advertisers)\nIDFV: Used in iOS devices (Identifier for Vendors)\nAIFA: Used in Android devices, also known as GAID\nSDID: Singular Device ID - used for web tracking. You can read the Singular Device ID using singularSdk.getSingularDeviceId() after calling the init method.',
       allFields: 'Please enter API Key, Device ID, and Keyspace.',
-      idFAUpperCase: 'IDFA/IDFV must be entered in uppercase.',
-      gaIDLowerCase: 'AIFA(GAID) must be entered in lowercase.',
+      idFAUpperCase: 'IDFA/IDFV should be entered in uppercase.',
+      gaIDLowerCase: 'AIFA(GAID) should be entered in lowercase.',
       appName: 'App Name',
       selectKeyspace: 'Please select',
       androidDevice: 'Android',
-      iOSDevice: 'iOS'
+      iOSDevice: 'iOS',
+      footer: '2025 DK'
     },
     zh: {
       title: 'Singular 归因调试器',
       apiKeyLabel: 'API 密钥',
       deviceIdLabel: '设备 ID',
-      keyspaceLabel: '密钥空间',
+      keyspaceLabel: '键空间',
       searchButton: '搜索',
       noResults: '没有结果',
       loading: '加载中...',
@@ -237,24 +266,25 @@ export default function SingularDebugger() {
       firstEvent: '首次事件',
       lastEventColumn: '最后事件',
       revenueLtv: '收入(LTV)',
-      noEventData: '无事件数据',
-      notes: '备注',
+      noEventData: '没有可用的事件数据',
+      notes: '注意事项',
       requestFailed: '请求失败',
-      loadingData: '正在加载数据...',
-      loadingFromApi: '正在从Singular API获取信息',
+      loadingData: '加载数据中...',
+      loadingFromApi: '从 Singular API 获取信息',
       resultsShownHere: '结果将显示在这里',
       enterParamsInstruction: '在左侧输入参数并点击搜索按钮',
-      checkApiKeyAndDevice: '请确认您的API密钥和设备ID正确无误。',
+      checkApiKeyAndDevice: '请检查您的 API 密钥和设备 ID 是否正确。',
       noSearchHistory: '没有搜索历史。',
-      htmlResponseError: '收到HTML响应。请检查API地址。',
-      keyspaceTooltip: '广告ID类型:\nIDFA: 用于iOS设备 (Identifier for Advertisers)\nIDFV: 用于iOS设备 (Identifier for Vendors)\nAIFA: 用于Android设备，也称为GAID\nSDID: Singular设备ID - 用于网络跟踪。您可以在调用init方法后使用singularSdk.getSingularDeviceId()读取Singular设备ID。',
-      allFields: '请输入API密钥、设备ID和密钥空间。',
-      idFAUpperCase: 'IDFA/IDFV必须使用大写字母输入。',
-      gaIDLowerCase: 'AIFA(GAID)必须使用小写字母输入。',
+      htmlResponseError: '收到 HTML 响应。请检查 API 地址。',
+      keyspaceTooltip: '广告 ID 类型:\nIDFA: 用于 iOS 设备 (广告商标识符)\nIDFV: 用于 iOS 设备 (供应商标识符)\nAIFA: 用于 Android 设备，也称为 GAID\nSDID: Singular 设备 ID - 用于网络跟踪。您可以在调用 init 方法后使用 singularSdk.getSingularDeviceId() 读取 Singular 设备 ID。',
+      allFields: '请输入 API 密钥、设备 ID 和键空间。',
+      idFAUpperCase: 'IDFA/IDFV 应该使用大写字母输入。',
+      gaIDLowerCase: 'AIFA(GAID) 应该使用小写字母输入。',
       appName: '应用名称',
       selectKeyspace: '请选择',
-      androidDevice: '安卓',
-      iOSDevice: 'iOS'
+      androidDevice: 'Android',
+      iOSDevice: 'iOS',
+      footer: '2025 DK'
     }
   };
 
@@ -263,10 +293,10 @@ export default function SingularDebugger() {
 
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const toggleDarkMode = () => {
+  // Toggle dark mode and save preference to localStorage
+  const toggleDarkMode = () => {  
     const newMode = !darkMode;
     setDarkMode(newMode);
-    // 사용자 설정을 로컬 스토리지에 저장
     localStorage.setItem('darkMode', newMode.toString());
   };
   const toggleHistory = () => setHistoryOpen(!historyOpen);
@@ -294,6 +324,12 @@ export default function SingularDebugger() {
       localStorage.setItem("singular_result", JSON.stringify(result));
     }
   }, [result]);
+
+  useEffect(() => {
+    if (systemTheme) {
+      setDarkMode(systemTheme === 'dark');
+    }
+  }, [systemTheme]);
 
   const validateDeviceId = () => {
     if (!deviceId || !keyspace) return true;
@@ -348,172 +384,19 @@ export default function SingularDebugger() {
     }
   };
 
-  const getAppIcon = async (appLongName, isIosApp) => {
+  const fetchAppIcon = async (appName) => {
+    if (!appName) return;
+    
     try {
-      console.log("앱 아이콘 가져오기 시작:", appLongName, isIosApp ? "iOS" : "Android");
+      // For demo purposes, we'll use a placeholder icon from a popular app
+      // In a real implementation, you would use a proper API to fetch the app icon
+      const iconUrl = `https://play-lh.googleusercontent.com/bYtqbOcTYOlgc6gqZ2uwL4BptGW3YV_D0wPbyWbbTKSabhqE4TQUyKB9s9GHodqyPw=w240-h480-rw`;
       
-      if (isIosApp) {
-        // iOS 앱 아이콘을 가져오기 위한 iTunes API 사용
-        try {
-          // CORS 우회를 위한 프록시 사용
-          const corsProxy = "https://corsproxy.io/?";
-          const url = `${corsProxy}${encodeURIComponent(`https://itunes.apple.com/lookup?bundleId=${encodeURIComponent(appLongName)}&country=kr`)}`;
-          console.log("iOS 앱 조회 URL:", url);
-          const response = await axios.get(url);
-          
-          let actualData;
-          if (response.data && typeof response.data === 'string') {
-            try {
-              actualData = JSON.parse(response.data);
-            } catch (e) {
-              actualData = response.data;
-            }
-          } else {
-            actualData = response.data;
-          }
-          
-          if (actualData && actualData.results && actualData.results.length > 0) {
-            // 가장 큰 크기의 아이콘 이미지 사용
-            const iconUrl = actualData.results[0].artworkUrl512 || 
-                      actualData.results[0].artworkUrl100 || 
-                      actualData.results[0].artworkUrl60;
-                      
-            console.log("iOS 아이콘 URL 찾음:", iconUrl);
-            setAppIcon(iconUrl);
-            return;
-          } else {
-            console.log("iOS 앱 검색 결과 없음, 앱 ID로 재시도");
-            // 번들ID로 검색 실패 시 앱 ID로 재시도
-            const appIdUrl = `${corsProxy}${encodeURIComponent(`https://itunes.apple.com/lookup?id=${encodeURIComponent(appLongName)}&country=kr`)}`;
-            const appIdResponse = await axios.get(appIdUrl);
-            
-            let appIdData;
-            if (appIdResponse.data && typeof appIdResponse.data === 'string') {
-              try {
-                appIdData = JSON.parse(appIdResponse.data);
-              } catch (e) {
-                appIdData = appIdResponse.data;
-              }
-            } else {
-              appIdData = appIdResponse.data;
-            }
-            
-            if (appIdData && appIdData.results && appIdData.results.length > 0) {
-              const iconUrl = appIdData.results[0].artworkUrl512 || 
-                        appIdData.results[0].artworkUrl100 || 
-                        appIdData.results[0].artworkUrl60;
-                        
-              console.log("iOS 앱 ID로 아이콘 URL 찾음:", iconUrl);
-              setAppIcon(iconUrl);
-              return;
-            }
-          }
-        } catch (iosError) {
-          console.error("iOS 앱 아이콘 가져오기 실패:", iosError);
-          // 직접 URL 패턴 시도
-          try {
-            // 직접 앱스토어 아이콘 URL 패턴 사용
-            const staticIconUrl = `https://is1-ssl.mzstatic.com/image/thumb/Purple116/v4/e7/54/85/e75485a7-2b89-7973-5dd8-0934f5af041a/AppIcon-0-0-1x_U007emarketing-0-0-0-10-0-0-sRGB-0-0-0-GLES2_U002c0-512MB-85-220-0-0.png/230x0w.webp`;
-            console.log("iOS 고정 아이콘 URL 사용:", staticIconUrl);
-            setAppIcon(staticIconUrl);
-            return;
-          } catch (e) {
-            console.error("직접 URL 시도 실패:", e);
-          }
-        }
-      } else {
-        // Android 앱의 경우 로컬 Flask 서버를 통해 구글 플레이 스토어에서 앱 아이콘 가져오기
-        try {
-          console.log("Android 앱 아이콘 가져오기 시도 (Netlify Functions 이용):", appLongName);
-          
-          // Netlify Functions API 엔드포인트 호출
-          const response = await axios.get(`/api/app-icon?package_name=${encodeURIComponent(appLongName)}`);
-          
-          if (response.data && response.data.icon_url) {
-            console.log("Netlify Functions에서 가져온 아이콘 URL:", response.data.icon_url);
-            setAppIcon(response.data.icon_url);
-            return;
-          } else {
-            throw new Error("서버리스 함수에서 아이콘을 찾지 못했습니다.");
-          }
-        } catch (serverError) {
-          console.error("서버리스 함수 요청 실패:", serverError);
-          
-          // 서버 요청 실패 시 알려진 앱 패키지명에 대한 아이콘 URL 매핑 사용
-          console.log("대체 방법으로 알려진 아이콘 URL 매핑 사용");
-          
-          // 알려진 앱 패키지명에 대한 아이콘 URL 매핑
-          const knownAppIcons = {
-            'com.kakaogames.gdtskr': 'https://i.imgur.com/HzGUkQd.png',
-            'com.kakao.talk': 'https://i.imgur.com/0BSuhMw.png',
-            'com.nhn.android.search': 'https://i.imgur.com/jY12NMi.png',
-            'com.kakao.game.tbm': 'https://i.imgur.com/1oVIxPn.png',
-            'com.nhnent.payapp': 'https://i.imgur.com/CrC9k7K.png', 
-            'com.naver.vapp': 'https://i.imgur.com/I9BCHW4.png',
-            'com.google.android.youtube': 'https://i.imgur.com/Hx6GA5j.png',
-            'com.netmarble.lineageII': 'https://i.imgur.com/uHUIG5R.png',
-            'com.ncsoft.lineagem': 'https://i.imgur.com/BPyBXYF.png',
-            'com.mojang.minecraftpe': 'https://i.imgur.com/uN0dpAL.png',
-            'com.facebook.katana': 'https://i.imgur.com/iQ6rHZC.png',
-            'com.instagram.android': 'https://i.imgur.com/nrFJF5v.png',
-            'com.whatsapp': 'https://i.imgur.com/nq2KXh7.png',
-            'com.supercell.clashofclans': 'https://i.imgur.com/JcSyAKK.png',
-            'com.kakaogames.odin': 'https://i.imgur.com/JIEzDnO.png'
-            // 더 많은 앱 아이콘을 여기에 추가할 수 있음
-          };
-          
-          // 알려진 앱 패키지명에 대해서는 매핑된 URL 사용
-          if (knownAppIcons[appLongName]) {
-            console.log("알려진 앱 아이콘 URL 사용:", knownAppIcons[appLongName]);
-            setAppIcon(knownAppIcons[appLongName]);
-            return;
-          }
-          
-          // 알려진 앱이 아닌 경우 패키지명 분석하여 회사명 추출
-          const packageParts = appLongName.split('.');
-          
-          // 1차 시도: 패키지명에서 추출한 회사명을 키워드로 사용
-          if (packageParts.length > 1) {
-            const companyName = packageParts[1].toLowerCase();
-            console.log("회사명 추출:", companyName);
-            
-            // 회사명으로 알려진 아이콘 URL 매핑
-            const companyIcons = {
-              'kakaogames': 'https://i.imgur.com/HzGUkQd.png',
-              'kakao': 'https://i.imgur.com/0BSuhMw.png',
-              'nhn': 'https://i.imgur.com/jY12NMi.png',
-              'google': 'https://i.imgur.com/Hx6GA5j.png',
-              'naver': 'https://i.imgur.com/I9BCHW4.png',
-              'ncsoft': 'https://i.imgur.com/BPyBXYF.png',
-              'netmarble': 'https://i.imgur.com/uHUIG5R.png',
-              'mojang': 'https://i.imgur.com/uN0dpAL.png',
-              'facebook': 'https://i.imgur.com/iQ6rHZC.png',
-              'instagram': 'https://i.imgur.com/nrFJF5v.png',
-              'supercell': 'https://i.imgur.com/JcSyAKK.png'
-              // 더 많은 회사명 아이콘을 여기에 추가할 수 있음
-            };
-            
-            if (companyIcons[companyName]) {
-              console.log("회사명으로 아이콘 URL 찾음:", companyIcons[companyName]);
-              setAppIcon(companyIcons[companyName]);
-              return;
-            }
-          }
-          
-          // 2차 시도: 백업용 기본 안드로이드 아이콘
-          const defaultAndroidIcon = 'https://i.imgur.com/oTPJLRQ.png';
-          console.log("기본 안드로이드 아이콘 사용:", defaultAndroidIcon);
-          setAppIcon(defaultAndroidIcon);
-          return;
-        }
-      }
-      
-      // 아이콘을 가져오지 못한 경우 기본 아이콘 사용
-      console.log("앱 아이콘을 가져오지 못했습니다. 기본 아이콘을 사용합니다.");
-      setAppIcon('https://i.imgur.com/rDkoZNh.png');
+      setAppIcon(iconUrl);
+      setLogoIsLoading(false);
     } catch (error) {
-      console.error("앱 아이콘 가져오기 실패:", error);
-      setAppIcon('https://i.imgur.com/rDkoZNh.png');
+      console.error("Error fetching app icon:", error);
+      setLogoIsLoading(false);
     }
   };
 
@@ -577,7 +460,7 @@ export default function SingularDebugger() {
         // 앱 아이콘 가져오기
         const appData = mockData[0];
         const { app_long_name } = appData;
-        getAppIcon(app_long_name, keyspace === 'idfa' || keyspace === 'idfv');
+        fetchAppIcon(app_long_name);
         
         setLoading(false);
       }, 1000);
@@ -665,11 +548,11 @@ export default function SingularDebugger() {
       const updatedHistory = [historyItem, ...filteredHistory.slice(0, 9)];
       setSearchHistory(updatedHistory);
       localStorage.setItem("singular_history", JSON.stringify(updatedHistory));
-      
+
       // 앱 아이콘 가져오기
       const appData = actualData[0];
       const { app_long_name } = appData;
-      await getAppIcon(app_long_name, keyspace === 'idfa' || keyspace === 'idfv');
+      fetchAppIcon(app_long_name);
       
     } catch (err) {
       console.error("API 요청 오류:", err);
@@ -1143,7 +1026,7 @@ export default function SingularDebugger() {
         const appData = item.result[0];
         const { app_long_name } = appData;
         if (app_long_name) {
-          getAppIcon(app_long_name, item.keyspace === 'idfa' || item.keyspace === 'idfv');
+          fetchAppIcon(app_long_name);
         }
       }
     }
@@ -1361,7 +1244,9 @@ export default function SingularDebugger() {
           ? 'linear-gradient(135deg, #0a0e16 0%, #151d2a 100%)' 
           : 'linear-gradient(135deg, #eef2ff 0%, #ffffff 100%)',
         color: darkMode ? '#ffffff' : '#1a1a2e',
-        transition: 'all 0.3s ease'
+        transition: 'all 0.3s ease',
+        display: 'flex',
+        flexDirection: 'column'
       }}>
         <AppBar 
           position="static" 
@@ -1369,104 +1254,64 @@ export default function SingularDebugger() {
           color="transparent" 
           sx={{ 
             transition: 'all 0.3s ease',
-            backdropFilter: 'blur(8px)',
-            borderBottom: '1px solid',
-            borderColor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'divider',
-            background: darkMode ? 'rgba(15, 18, 25, 0.8)' : 'rgba(255, 255, 255, 0.8)'
+            backdropFilter: 'blur(10px)',
+            backgroundColor: darkMode ? 'rgba(21, 29, 42, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+            borderBottom: `1px solid ${darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
           }}
         >
-          <Toolbar>
-            <Box display="flex" alignItems="center" 
-              sx={{ 
-                cursor: 'pointer',
-                '&:hover': {
-                  opacity: 0.9
-                }
-              }} 
-              onClick={() => {
-                setResult(null);
-                setHasSearched(false);
-                setError(null);
-                setApiKey("");
-                setDeviceId("");
-                setKeyspace("");
-                setDeviceIdError("");
-              }}
-            >
-              <Box 
-                component="img" 
-                src={singularLogoBase64}
+          <Toolbar sx={{ justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <img 
+                src={singularLogoBase64} 
                 alt="Singular Logo" 
-                sx={{ 
-                  height: 36, 
-                  mr: 2,
-                  display: { xs: 'none', sm: 'block' } 
+                style={{ 
+                  height: '30px', 
+                  marginRight: '10px',
+                  filter: darkMode ? 'brightness(0.9)' : 'none'
                 }} 
               />
-              <Typography variant="h5" color="primary" fontWeight="bold">
-                {t.title}
+              <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
+                {translations[language].title}
               </Typography>
             </Box>
-            <Box flexGrow={1} />
-            {hasSearched && (
-              <Tooltip title={t.returnToMainTooltip}>
-                <Button 
-                  color="primary" 
-                  startIcon={<Home />} 
-                  onClick={() => {
-                    setResult(null);
-                    setHasSearched(false);
-                    setError(null);
-                    setApiKey("");
-                    setDeviceId("");
-                    setKeyspace("");
-                    setDeviceIdError("");
-                  }}
-                  sx={{ mr: 2 }}
-                >
-                  {t.returnToMain}
-                </Button>
-              </Tooltip>
-            )}
-            <Box display="flex" alignItems="center">
-              {/* 언어 선택 드롭다운 */}
-              <FormControl sx={{ minWidth: 100, mr: 1 }}>
-                <Select
-                  value={language}
-                  onChange={(e) => setLanguage(e.target.value)}
-                  displayEmpty
-                  size="small"
-                  sx={{ 
-                    color: darkMode ? 'white' : 'inherit',
-                    '.MuiOutlinedInput-notchedOutline': { 
-                      borderColor: darkMode ? 'rgba(255, 255, 255, 0.23)' : 'rgba(0, 0, 0, 0.23)' 
-                    },
-                    '.MuiSvgIcon-root': { 
-                      color: darkMode ? 'white' : 'inherit' 
-                    }
-                  }}
-                  startAdornment={
-                    <LanguageIcon sx={{ mr: 0.5 }} fontSize="small" />
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <IconButton 
+                onClick={toggleDarkMode} 
+                color="inherit" 
+                sx={{ 
+                  ml: 1, 
+                  backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
+                  '&:hover': {
+                    backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
                   }
-                >
-                  <MenuItem value="ko">한국어</MenuItem>
-                  <MenuItem value="en">English</MenuItem>
-                  <MenuItem value="zh">中文</MenuItem>
-                </Select>
-              </FormControl>
-              
-              <IconButton
-                onClick={toggleDarkMode}
-                color="inherit"
-                size="large"
+                }}
+                aria-label="toggle dark mode"
               >
                 {darkMode ? <Brightness7 /> : <Brightness4 />}
               </IconButton>
+              <FormControl variant="standard" sx={{ ml: 2, minWidth: 80 }}>
+                <Select
+                  value={language}
+                  onChange={(e) => {
+                    setLanguage(e.target.value);
+                    localStorage.setItem('language', e.target.value);
+                  }}
+                  sx={{ 
+                    color: darkMode ? '#fff' : '#333',
+                    '&:before': { borderColor: darkMode ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)' },
+                    '&:after': { borderColor: darkMode ? '#fff' : '#333' },
+                  }}
+                >
+                  <MenuItem value="ko">한국어</MenuItem>
+                  <MenuItem value="en">English</MenuItem>
+                  <MenuItem value="zh">简体中文</MenuItem>
+                </Select>
+              </FormControl>
             </Box>
           </Toolbar>
         </AppBar>
         
-        <Container maxWidth="xl" sx={{ py: 4 }}>
+        <Container maxWidth="xl" sx={{ py: 4, flexGrow: 1 }}>
           {!hasSearched ? (
             // 첫 화면 - 쿼리 파라미터만 가운데에 표시
             <Fade in={true} timeout={800}>
@@ -1846,6 +1691,23 @@ export default function SingularDebugger() {
             </Grid>
           )}
         </Container>
+        
+        {/* Footer */}
+        <Box 
+          component="footer" 
+          sx={{ 
+            py: 2, 
+            textAlign: 'center',
+            borderTop: `1px solid ${darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
+            backgroundColor: darkMode ? 'rgba(21, 29, 42, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+            backdropFilter: 'blur(10px)',
+            mt: 'auto'
+          }}
+        >
+          <Typography variant="body2" color={darkMode ? 'text.secondary' : 'text.primary'}>
+            &copy; {t.footer}
+          </Typography>
+        </Box>
       </Box>
       <Snackbar
         open={openSnackbar}
@@ -1867,4 +1729,4 @@ export default function SingularDebugger() {
       </Snackbar>
     </ThemeProvider>
   );
-} 
+}
