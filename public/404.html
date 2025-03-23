@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Singular Attribution Debugger</title>
+    <script type="text/javascript">
+      // Single Page Apps for GitHub Pages
+      // MIT License
+      // https://github.com/rafgraph/spa-github-pages
+      var pathSegmentsToKeep = 1;
+
+      var l = window.location;
+      var segmentCount = l.pathname.split('/').length;
+      var replaced = l.pathname.replace(
+        new RegExp('^(' + '/[^/]*?'.repeat(pathSegmentsToKeep) + ')(?:/)?$'), 
+        '$1'
+      ) + '/?';
+      
+      if (segmentCount > pathSegmentsToKeep + 1) {
+        l.replace(
+          l.protocol + '//' + l.hostname + 
+          (l.port ? ':' + l.port : '') +
+          replaced + 
+          l.search + l.hash
+        );
+      } else {
+        l.replace(
+          l.protocol + '//' + l.hostname + 
+          (l.port ? ':' + l.port : '') +
+          '/SingularTestingConsole/' +
+          l.pathname.slice(1).split('/').slice(pathSegmentsToKeep).join('/') + 
+          '?' +
+          (l.search ? l.search.slice(1) + '&' : '') +
+          '_=' + encodeURIComponent(replaced) +
+          l.hash
+        );
+      }
+    </script>
+  </head>
+  <body>
+  </body>
+</html> 
