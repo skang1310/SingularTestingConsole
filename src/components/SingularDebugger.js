@@ -97,55 +97,162 @@ export default function SingularDebugger() {
   // Singular 아이콘 Base64 인코딩
   const singularIconBase64 = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMCAzMCI+PHBhdGggZD0iTTEwLjQgMTEuMkMxMC40IDE3LjUgMCAxNy4zIDAgMjMuN2MwIDQuNCAzIDYuMiA2LjMgNi4yIDUuNCAwIDguNy00LjEgOC43LTlWN2g1LjF2MTMuOWMwIDEwLjEtNy42IDE0LTQuOSAyMy4xLTEuOS0uNi0xNC00LjQtMTQtMTNDMS4zIDIzLjcgMTIgMTQuNCAxMiAxMS4yYzAtMi42LTEuNi0zLTkuMy0yQzMuMiAxLjMgMTEuNSAwIDE2LjEgMGM0LjUgMCA3LjYgMi44IDcuNiA2LjIgMCAzLTIgNS01IDVzLTYtMi02LTVjMC0yLjktMS40LTQuOC0yLjMtNS4ydjUuMmMwIDIuNyAyLjIgNC45IDQuOSA0LjlzNS0yLjIgNS00LjlWMEgyNlY2SDEwLjQiIGZpbGw9IiMwMDM5Y2IiLz48L3N2Zz4=";
 
-  // 목업 데이터 - 테스트용
-  const mockData = [
-    {
-      app_name: "샘플 앱",
-      app_long_name: "com.example.sampleapp",
-      install_info: {
-        network: "Facebook",
-        install_time: "2023-04-15T12:30:45Z",
-        notes: "샘플 앱 어트리뷰션 데이터입니다."
-      },
-      events: [
-        {
-          event_name: "purchase",
-          event_count: 5,
-          first_event_time: "2023-04-16T10:20:30Z",
-          last_event_time: "2023-04-20T15:45:22Z",
-          revenue_ltv: 25000
-        },
-        {
-          event_name: "app_open",
-          event_count: 20,
-          first_event_time: "2023-04-15T13:05:12Z",
-          last_event_time: "2023-04-21T08:30:15Z",
-          revenue_ltv: 0
-        },
-        {
-          event_name: "tutorial_complete",
-          event_count: 1,
-          first_event_time: "2023-04-15T14:22:18Z",
-          last_event_time: "2023-04-15T14:22:18Z",
-          revenue_ltv: 0
-        },
-        {
-          event_name: "registration",
-          event_count: 1,
-          first_event_time: "2023-04-15T13:45:30Z",
-          last_event_time: "2023-04-15T13:45:30Z",
-          revenue_ltv: 0
-        },
-        {
-          event_name: "subscription",
-          event_count: 2,
-          first_event_time: "2023-04-18T09:15:42Z",
-          last_event_time: "2023-04-19T18:30:10Z",
-          revenue_ltv: 15000
-        }
-      ]
+  // 언어 관련 텍스트 객체
+  const translations = {
+    ko: {
+      title: 'Singular 어트리뷰션 디버거',
+      apiKeyLabel: 'API Key',
+      deviceIdLabel: 'Device ID',
+      keyspaceLabel: 'Keyspace',
+      searchButton: '조회하기',
+      noResults: '결과가 없습니다',
+      loading: '로딩 중...',
+      error: '오류가 발생했습니다',
+      copySuccess: '복사되었습니다',
+      sortAsc: '오름차순 정렬',
+      sortDesc: '내림차순 정렬',
+      touchData: '터치 정보',
+      campaignData: '캠페인 정보',
+      storeLink: '스토어에서 보기',
+      appHeaderTitle: '앱 정보',
+      queryParams: '쿼리 파라미터',
+      returnToMain: '메인으로',
+      returnToMainTooltip: '메인으로 돌아가기',
+      historyTitle: '최근 검색 기록',
+      installNetwork: '설치 네트워크',
+      installTime: '설치 시간',
+      infoMissing: '정보 없음',
+      eventListTitle: '이벤트 목록',
+      lastEvent: '최종 이벤트',
+      totalRevenue: '총 수익',
+      eventName: '이벤트명',
+      eventCount: '횟수',
+      firstEvent: '첫 이벤트',
+      lastEventColumn: '마지막 이벤트',
+      revenueLtv: '수익(LTV)',
+      noEventData: '이벤트 데이터가 없습니다',
+      notes: '참고 사항',
+      requestFailed: '요청 실패',
+      loadingData: '데이터 불러오는 중...',
+      loadingFromApi: 'Singular API로부터 정보를 가져오고 있습니다',
+      resultsShownHere: '결과가 여기에 표시됩니다',
+      enterParamsInstruction: '왼쪽에서 파라미터를 입력하고 조회하기 버튼을 클릭하세요',
+      checkApiKeyAndDevice: 'API 키와 디바이스 ID가 정확한지 확인하세요.',
+      noSearchHistory: '검색 히스토리가 없습니다.',
+      htmlResponseError: 'HTML 응답을 받았습니다. API 주소를 확인하세요.',
+      keyspaceTooltip: '광고 ID 유형:\nIDFA: iOS 기기에서 사용 (Identifier for Advertisers)\nIDFV: iOS 기기에서 사용 (Identifier for Vendors)\nAIFA: Android 기기에서 사용, GAID라고도 함\nSDID: Singular Device ID - used for web tracking. You can read the Singular Device ID using singularSdk.getSingularDeviceId() after calling the init method.',
+      allFields: 'API Key, Device ID, Keyspace를 모두 입력해주세요.',
+      idFAUpperCase: 'IDFA/IDFV는 대문자로 입력해야 합니다.',
+      gaIDLowerCase: 'AIFA(GAID)는 소문자로 입력해야 합니다.',
+      appName: '앱 이름',
+      selectKeyspace: '선택해주세요',
+      androidDevice: 'Android',
+      iOSDevice: 'iOS'
+    },
+    en: {
+      title: 'Singular Attribution Debugger',
+      apiKeyLabel: 'API Key',
+      deviceIdLabel: 'Device ID',
+      keyspaceLabel: 'Keyspace',
+      searchButton: 'Search',
+      noResults: 'No results',
+      loading: 'Loading...',
+      error: 'An error occurred',
+      copySuccess: 'Copied',
+      sortAsc: 'Sort Ascending',
+      sortDesc: 'Sort Descending',
+      touchData: 'Touch Data',
+      campaignData: 'Campaign Data',
+      storeLink: 'View in Store',
+      appHeaderTitle: 'App Information',
+      queryParams: 'Query Parameters',
+      returnToMain: 'Back to Main',
+      returnToMainTooltip: 'Return to main page',
+      historyTitle: 'Recent Search History',
+      installNetwork: 'Install Network',
+      installTime: 'Install Time',
+      infoMissing: 'No Information',
+      eventListTitle: 'Event List',
+      lastEvent: 'Last Event',
+      totalRevenue: 'Total Revenue',
+      eventName: 'Event Name',
+      eventCount: 'Count',
+      firstEvent: 'First Event',
+      lastEventColumn: 'Last Event',
+      revenueLtv: 'Revenue (LTV)',
+      noEventData: 'No event data available',
+      notes: 'Notes',
+      requestFailed: 'Request Failed',
+      loadingData: 'Loading data...',
+      loadingFromApi: 'Fetching information from Singular API',
+      resultsShownHere: 'Results will be displayed here',
+      enterParamsInstruction: 'Enter parameters on the left and click the search button',
+      checkApiKeyAndDevice: 'Check that your API Key and Device ID are correct.',
+      noSearchHistory: 'No search history.',
+      htmlResponseError: 'Received HTML response. Please check the API address.',
+      keyspaceTooltip: 'The type of advertising ID:\nIDFA: Used in iOS devices (Identifier for Advertisers)\nIDFV: Used in iOS devices (Identifier for Vendors)\nAIFA: Used in Android devices, also known as GAID\nSDID: Singular Device ID - used for web tracking. You can read the Singular Device ID using singularSdk.getSingularDeviceId() after calling the init method.',
+      allFields: 'Please enter API Key, Device ID, and Keyspace.',
+      idFAUpperCase: 'IDFA/IDFV must be entered in uppercase.',
+      gaIDLowerCase: 'AIFA(GAID) must be entered in lowercase.',
+      appName: 'App Name',
+      selectKeyspace: 'Please select',
+      androidDevice: 'Android',
+      iOSDevice: 'iOS'
+    },
+    zh: {
+      title: 'Singular 归因调试器',
+      apiKeyLabel: 'API 密钥',
+      deviceIdLabel: '设备 ID',
+      keyspaceLabel: '密钥空间',
+      searchButton: '搜索',
+      noResults: '没有结果',
+      loading: '加载中...',
+      error: '发生错误',
+      copySuccess: '已复制',
+      sortAsc: '升序排序',
+      sortDesc: '降序排序',
+      touchData: '触点数据',
+      campaignData: '活动数据',
+      storeLink: '在商店中查看',
+      appHeaderTitle: '应用信息',
+      queryParams: '查询参数',
+      returnToMain: '返回主页',
+      returnToMainTooltip: '返回主页',
+      historyTitle: '最近搜索历史',
+      installNetwork: '安装网络',
+      installTime: '安装时间',
+      infoMissing: '无信息',
+      eventListTitle: '事件列表',
+      lastEvent: '最后事件',
+      totalRevenue: '总收入',
+      eventName: '事件名称',
+      eventCount: '次数',
+      firstEvent: '首次事件',
+      lastEventColumn: '最后事件',
+      revenueLtv: '收入(LTV)',
+      noEventData: '无事件数据',
+      notes: '备注',
+      requestFailed: '请求失败',
+      loadingData: '正在加载数据...',
+      loadingFromApi: '正在从Singular API获取信息',
+      resultsShownHere: '结果将显示在这里',
+      enterParamsInstruction: '在左侧输入参数并点击搜索按钮',
+      checkApiKeyAndDevice: '请确认您的API密钥和设备ID正确无误。',
+      noSearchHistory: '没有搜索历史。',
+      htmlResponseError: '收到HTML响应。请检查API地址。',
+      keyspaceTooltip: '广告ID类型:\nIDFA: 用于iOS设备 (Identifier for Advertisers)\nIDFV: 用于iOS设备 (Identifier for Vendors)\nAIFA: 用于Android设备，也称为GAID\nSDID: Singular设备ID - 用于网络跟踪。您可以在调用init方法后使用singularSdk.getSingularDeviceId()读取Singular设备ID。',
+      allFields: '请输入API密钥、设备ID和密钥空间。',
+      idFAUpperCase: 'IDFA/IDFV必须使用大写字母输入。',
+      gaIDLowerCase: 'AIFA(GAID)必须使用小写字母输入。',
+      appName: '应用名称',
+      selectKeyspace: '请选择',
+      androidDevice: '安卓',
+      iOSDevice: 'iOS'
     }
-  ];
+  };
+
+  // 현재 선택된 언어에 대한 번역 텍스트
+  const t = translations[language];
 
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -180,12 +287,12 @@ export default function SingularDebugger() {
     if (!deviceId || !keyspace) return true;
     
     if ((keyspace === "idfa" || keyspace === "idfv") && deviceId !== deviceId.toUpperCase()) {
-      setDeviceIdError("IDFA/IDFV는 대문자로 입력해야 합니다.");
+      setDeviceIdError(t.idFAUpperCase);
       return false;
     }
     
     if (keyspace === "android_advertising_id" && deviceId !== deviceId.toLowerCase()) {
-      setDeviceIdError("AIFA(GAID)는 소문자로 입력해야 합니다.");
+      setDeviceIdError(t.gaIDLowerCase);
       return false;
     }
     
@@ -200,13 +307,13 @@ export default function SingularDebugger() {
     // 즉시 검증
     if (keyspace === "idfa" || keyspace === "idfv") {
       if (newDeviceId !== newDeviceId.toUpperCase()) {
-        setDeviceIdError("IDFA/IDFV는 대문자로 입력해야 합니다.");
+        setDeviceIdError(t.idFAUpperCase);
       } else {
         setDeviceIdError("");
       }
     } else if (keyspace === "android_advertising_id") {
       if (newDeviceId !== newDeviceId.toLowerCase()) {
-        setDeviceIdError("AIFA(GAID)는 소문자로 입력해야 합니다.");
+        setDeviceIdError(t.gaIDLowerCase);
       } else {
         setDeviceIdError("");
       }
@@ -220,9 +327,9 @@ export default function SingularDebugger() {
     // 키스페이스 변경 시 디바이스 ID 검증
     if (deviceId) {
       if ((newKeyspace === "idfa" || newKeyspace === "idfv") && deviceId !== deviceId.toUpperCase()) {
-        setDeviceIdError("IDFA/IDFV는 대문자로 입력해야 합니다.");
+        setDeviceIdError(t.idFAUpperCase);
       } else if (newKeyspace === "android_advertising_id" && deviceId !== deviceId.toLowerCase()) {
-        setDeviceIdError("AIFA(GAID)는 소문자로 입력해야 합니다.");
+        setDeviceIdError(t.gaIDLowerCase);
       } else {
         setDeviceIdError("");
       }
@@ -400,7 +507,7 @@ export default function SingularDebugger() {
 
   const fetchAttribution = async () => {
     if (!apiKey || !deviceId || !keyspace) {
-      setSnackbarMessage("API Key, Device ID, Keyspace를 모두 입력해주세요.");
+      setSnackbarMessage(t.allFields);
       setOpenSnackbar(true);
       return;
     }
@@ -567,11 +674,7 @@ export default function SingularDebugger() {
     setOpenSnackbar(false);
   };
 
-  const keyspaceTooltip = `The type of advertising ID:
-IDFA: Used in iOS devices (Identifier for Advertisers)
-IDFV: Used in iOS devices (Identifier for Vendors)
-AIFA: Used in Android devices, also known as GAID
-SDID: Singular Device ID - used for web tracking. You can read the Singular Device ID using singularSdk.getSingularDeviceId() after calling the init method or using InitFinishedCallback.`;
+  const keyspaceTooltip = t.keyspaceTooltip;
 
   const handleSort = (field) => {
     if (sortField === field) {
@@ -627,7 +730,7 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
       return (
         <Box sx={{ p: 3, textAlign: 'center' }}>
           <Typography variant="body1" sx={{ mt: 2 }}>
-            결과가 없거나 형식이 올바르지 않습니다.
+            {t.noResults}
           </Typography>
         </Box>
       );
@@ -724,11 +827,11 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                   </Avatar>
                 )}
                 <Box sx={{ flexGrow: 1 }}>
-                  <Typography variant="body2" color="text.secondary">앱 이름</Typography>
+                  <Typography variant="body2" color="text.secondary">{t.appName}</Typography>
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="h6" noWrap sx={{ mr: 1 }}>{app_name || "정보 없음"}</Typography>
+                    <Typography variant="h6" noWrap sx={{ mr: 1 }}>{app_name || t.infoMissing}</Typography>
                     {!isIos && app_long_name && (
-                      <Tooltip title="Google Play에서 보기">
+                      <Tooltip title={t.storeLink}>
                         <Box
                           component="a"
                           href={`https://play.google.com/store/apps/details?id=${encodeURIComponent(app_long_name)}`}
@@ -753,7 +856,7 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                       </Tooltip>
                     )}
                     {isIos && app_long_name && (
-                      <Tooltip title="App Store에서 보기">
+                      <Tooltip title={t.storeLink}>
                         <Box
                           component="a"
                           href={`https://apps.apple.com/kr/app/id${encodeURIComponent(app_long_name)}`}
@@ -793,8 +896,8 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                   <Share />
                 </Avatar>
                 <Box>
-                  <Typography variant="body2" color="text.secondary">설치 네트워크</Typography>
-                  <Typography variant="h6" noWrap>{install_info?.network || "정보 없음"}</Typography>
+                  <Typography variant="body2" color="text.secondary">{t.installNetwork}</Typography>
+                  <Typography variant="h6" noWrap>{install_info?.network || t.infoMissing}</Typography>
                 </Box>
               </Paper>
             </Grid>
@@ -811,8 +914,8 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                   <Schedule />
                 </Avatar>
                 <Box>
-                  <Typography variant="body2" color="text.secondary">설치 시간</Typography>
-                  <Typography variant="h6">{formatDateTime(install_info?.install_time) || "정보 없음"}</Typography>
+                  <Typography variant="body2" color="text.secondary">{t.installTime}</Typography>
+                  <Typography variant="h6">{formatDateTime(install_info?.install_time) || t.infoMissing}</Typography>
                 </Box>
               </Paper>
             </Grid>
@@ -820,14 +923,14 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
         </Box>
 
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2, mt: 4, alignItems: 'center' }}>
-          <Typography variant="h6" color="primary" align="center">이벤트 목록</Typography>
+          <Typography variant="h6" color="primary" align="center">{t.eventListTitle}</Typography>
         </Box>
         
         <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
           <Box>
             {lastEvent && (
               <Chip 
-                label={`최종 이벤트: ${lastEvent.event_name} (${formatDateTime(lastEvent.last_event_time)})`} 
+                label={`${t.lastEvent}: ${lastEvent.event_name} (${formatDateTime(lastEvent.last_event_time)})`} 
                 color="primary" 
                 variant="outlined" 
                 size="small" 
@@ -836,7 +939,7 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
             )}
             {totalRevenue > 0 && (
               <Chip 
-                label={`총 수익: ${formatCurrency(totalRevenue)}`} 
+                label={`${t.totalRevenue}: ${formatCurrency(totalRevenue)}`} 
                 color="secondary" 
                 variant="outlined" 
                 size="small" 
@@ -866,18 +969,18 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                 },
                 textAlign: 'center'
               }}>
-                <SortableTableHeader field="event_name" label="이벤트명" />
-                <SortableTableHeader field="event_count" label="횟수" />
-                <SortableTableHeader field="first_event_time" label="첫 이벤트" />
-                <SortableTableHeader field="last_event_time" label="마지막 이벤트" />
-                <SortableTableHeader field="revenue_ltv" label="수익(LTV)" />
+                <SortableTableHeader field="event_name" label={t.eventName} />
+                <SortableTableHeader field="event_count" label={t.eventCount} />
+                <SortableTableHeader field="first_event_time" label={t.firstEvent} />
+                <SortableTableHeader field="last_event_time" label={t.lastEventColumn} />
+                <SortableTableHeader field="revenue_ltv" label={t.revenueLtv} />
               </TableRow>
             </TableHead>
             <TableBody>
               {sortedEvents.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
-                    <Typography color="text.secondary">이벤트 데이터가 없습니다</Typography>
+                    <Typography color="text.secondary">{t.noEventData}</Typography>
                   </TableCell>
                 </TableRow>
               ) : (
@@ -942,7 +1045,7 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
           <Paper elevation={1} sx={{ p: 2, mb: 2, bgcolor: darkMode ? 'background.paper' : 'background.default' }}>
             <Typography variant="body2" color="text.secondary" gutterBottom>
               <LocalOffer fontSize="small" sx={{ mr: 1, verticalAlign: 'middle' }} />
-              참고 사항
+              {t.notes}
             </Typography>
             <Typography variant="body1">
               {install_info.notes}
@@ -957,7 +1060,26 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
     if (!dateTimeStr) return "-";
     try {
       const date = new Date(dateTimeStr);
-      return date.toLocaleString();
+      
+      // 선택된 언어에 따라 다른 locale 포맷 적용
+      let locale = 'ko-KR';
+      let options = { 
+        year: 'numeric', 
+        month: '2-digit', 
+        day: '2-digit', 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        second: '2-digit',
+        hour12: true // 모든 언어에서 12시간제 사용
+      };
+      
+      if (language === 'en') {
+        locale = 'en-US';
+      } else if (language === 'zh') {
+        locale = 'zh-CN';
+      }
+      
+      return date.toLocaleString(locale, options);
     } catch (e) {
       return dateTimeStr;
     }
@@ -965,9 +1087,22 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
 
   const formatCurrency = (value) => {
     if (!value) return "-";
-    return new Intl.NumberFormat('ko-KR', { 
+    
+    // 선택된 언어에 따라 다른 통화 형식 적용
+    let locale = 'ko-KR';
+    let currency = 'KRW';
+    
+    if (language === 'en') {
+      locale = 'en-US';
+      currency = 'USD';
+    } else if (language === 'zh') {
+      locale = 'zh-CN';
+      currency = 'CNY';
+    }
+    
+    return new Intl.NumberFormat(locale, { 
       style: 'currency', 
-      currency: 'KRW',
+      currency: currency,
       maximumFractionDigits: 2
     }).format(value);
   };
@@ -1008,7 +1143,7 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
     if (searchHistory.length === 0) {
       return (
         <ListItem>
-          <ListItemText primary="검색 히스토리가 없습니다." />
+          <ListItemText primary={t.noSearchHistory} />
         </ListItem>
       );
     }
@@ -1017,7 +1152,7 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
       // 앱 이름 가져오기
       const appName = item.result && Array.isArray(item.result) && item.result.length > 0 
         ? item.result[0].app_name 
-        : "앱 정보 없음";
+        : t.infoMissing;
       
       // 키스페이스 표시명 설정
       let keyspaceDisplay = item.keyspace;
@@ -1068,68 +1203,102 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
     }
   `;
 
-  // 언어 관련 텍스트 객체
-  const translations = {
-    ko: {
-      title: 'Singular 어트리뷰션 디버거',
-      apiKeyLabel: 'API Key',
-      deviceIdLabel: 'Device ID',
-      keyspaceLabel: 'Keyspace',
-      searchButton: '조회하기',
-      noResults: '결과가 없습니다',
-      loading: '로딩 중...',
-      error: '오류가 발생했습니다',
-      copySuccess: '복사되었습니다',
-      sortAsc: '오름차순 정렬',
-      sortDesc: '내림차순 정렬',
-      touchData: '터치 정보',
-      campaignData: '캠페인 정보',
-      storeLink: '스토어에서 보기',
-      appHeaderTitle: '앱 정보'
-    },
-    en: {
-      title: 'Singular Attribution Debugger',
-      apiKeyLabel: 'API Key',
-      deviceIdLabel: 'Device ID',
-      keyspaceLabel: 'Keyspace',
-      searchButton: 'Search',
-      noResults: 'No results',
-      loading: 'Loading...',
-      error: 'An error occurred',
-      copySuccess: 'Copied',
-      sortAsc: 'Sort Ascending',
-      sortDesc: 'Sort Descending',
-      touchData: 'Touch Data',
-      campaignData: 'Campaign Data',
-      storeLink: 'View in Store',
-      appHeaderTitle: 'App Information'
-    },
-    zh: {
-      title: 'Singular 归因调试器',
-      apiKeyLabel: 'API 密钥',
-      deviceIdLabel: '设备 ID',
-      keyspaceLabel: '密钥空间',
-      searchButton: '搜索',
-      noResults: '没有结果',
-      loading: '加载中...',
-      error: '发生错误',
-      copySuccess: '已复制',
-      sortAsc: '升序排序',
-      sortDesc: '降序排序',
-      touchData: '触点数据',
-      campaignData: '活动数据',
-      storeLink: '在商店中查看',
-      appHeaderTitle: '应用信息'
-    }
-  };
-
-  // 현재 선택된 언어에 대한 번역 텍스트
-  const t = translations[language];
-
   // 언어 변경 시 로컬스토리지에 저장
   useEffect(() => {
     localStorage.setItem('language', language);
   }, [language]);
+
+  // 목업 데이터 - 테스트용
+  const mockData = [
+    {
+      app_name: "샘플 앱",
+      app_long_name: "com.example.sampleapp",
+      install_info: {
+        network: "Facebook",
+        install_time: "2023-04-15T12:30:45Z",
+        notes: "샘플 앱 어트리뷰션 데이터입니다."
+      },
+      events: [
+        {
+          event_name: "App Install",
+          event_count: 1,
+          first_event_time: "2023-04-15T12:30:45Z",
+          last_event_time: "2023-04-15T12:30:45Z",
+          revenue_ltv: 0
+        },
+        {
+          event_name: "Level 1 Completed",
+          event_count: 1,
+          first_event_time: "2023-04-15T12:30:45Z",
+          last_event_time: "2023-04-15T12:30:45Z",
+          revenue_ltv: 0
+        },
+        {
+          event_name: "Level 2 Completed",
+          event_count: 1,
+          first_event_time: "2023-04-15T12:30:45Z",
+          last_event_time: "2023-04-15T12:30:45Z",
+          revenue_ltv: 0
+        },
+        {
+          event_name: "Level 3 Completed",
+          event_count: 1,
+          first_event_time: "2023-04-15T12:30:45Z",
+          last_event_time: "2023-04-15T12:30:45Z",
+          revenue_ltv: 0
+        },
+        {
+          event_name: "Level 4 Completed",
+          event_count: 1,
+          first_event_time: "2023-04-15T12:30:45Z",
+          last_event_time: "2023-04-15T12:30:45Z",
+          revenue_ltv: 0
+        },
+        {
+          event_name: "Level 5 Completed",
+          event_count: 1,
+          first_event_time: "2023-04-15T12:30:45Z",
+          last_event_time: "2023-04-15T12:30:45Z",
+          revenue_ltv: 0
+        },
+        {
+          event_name: "Level 6 Completed",
+          event_count: 1,
+          first_event_time: "2023-04-15T12:30:45Z",
+          last_event_time: "2023-04-15T12:30:45Z",
+          revenue_ltv: 0
+        },
+        {
+          event_name: "Level 7 Completed",
+          event_count: 1,
+          first_event_time: "2023-04-15T12:30:45Z",
+          last_event_time: "2023-04-15T12:30:45Z",
+          revenue_ltv: 0
+        },
+        {
+          event_name: "Level 8 Completed",
+          event_count: 1,
+          first_event_time: "2023-04-15T12:30:45Z",
+          last_event_time: "2023-04-15T12:30:45Z",
+          revenue_ltv: 0
+        },
+        {
+          event_name: "Level 9 Completed",
+          event_count: 1,
+          first_event_time: "2023-04-15T12:30:45Z",
+          last_event_time: "2023-04-15T12:30:45Z",
+          revenue_ltv: 0
+        },
+        {
+          event_name: "Level 10 Completed",
+          event_count: 1,
+          first_event_time: "2023-04-15T12:30:45Z",
+          last_event_time: "2023-04-15T12:30:45Z",
+          revenue_ltv: 0
+        }
+      ]
+    }
+  ];
 
   return (
     <ThemeProvider theme={theme}>
@@ -1186,7 +1355,7 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
             </Box>
             <Box flexGrow={1} />
             {hasSearched && (
-              <Tooltip title="메인으로 돌아가기">
+              <Tooltip title={t.returnToMainTooltip}>
                 <Button 
                   color="primary" 
                   startIcon={<Home />} 
@@ -1201,7 +1370,7 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                   }}
                   sx={{ mr: 2 }}
                 >
-                  메인으로
+                  {t.returnToMain}
                 </Button>
               </Tooltip>
             )}
@@ -1258,11 +1427,11 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                   }}
                 >
                   <CardContent sx={{ p: 3 }}>
-                    <Typography variant="h6" gutterBottom color="primary">쿼리 파라미터</Typography>
+                    <Typography variant="h6" gutterBottom color="primary">{t.queryParams}</Typography>
                     
                     <Box sx={{ position: 'relative', mt: 2 }}>
                       <TextField
-                        label="API Key"
+                        label={t.apiKeyLabel}
                         variant="outlined"
                         fullWidth
                         margin="normal"
@@ -1278,14 +1447,14 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                     
                     <Box display="flex" alignItems="center" mt={2}>
                       <FormControl fullWidth margin="normal">
-                        <InputLabel id="keyspace-label">Keyspace</InputLabel>
+                        <InputLabel id="keyspace-label">{t.keyspaceLabel}</InputLabel>
                         <Select
                           labelId="keyspace-label"
                           value={keyspace}
-                          label="Keyspace"
+                          label={t.keyspaceLabel}
                           onChange={handleKeyspaceChange}
                         >
-                          <MenuItem value="" disabled>선택해주세요</MenuItem>
+                          <MenuItem value="" disabled>{t.selectKeyspace}</MenuItem>
                           <MenuItem value="idfa">IDFA</MenuItem>
                           <MenuItem value="idfv">IDFV</MenuItem>
                           <MenuItem value="android_advertising_id">AIFA (GAID)</MenuItem>
@@ -1301,7 +1470,7 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                     
                     <Box sx={{ position: 'relative' }}>
                       <TextField
-                        label="Device ID"
+                        label={t.deviceIdLabel}
                         variant="outlined"
                         fullWidth
                         margin="normal"
@@ -1332,7 +1501,7 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                           }
                         }}
                       >
-                        {loading ? <CircularProgress size={24} color="inherit" /> : "조회하기"}
+                        {loading ? <CircularProgress size={24} color="inherit" /> : t.searchButton}
                       </Button>
                     </Box>
 
@@ -1340,7 +1509,7 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                       <Alert severity="error" sx={{ mt: 2 }}>
                         <Typography variant="subtitle2">{error.message}</Typography>
                         <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
-                          API 키와 디바이스 ID가 정확한지 확인하세요.
+                          {t.checkApiKeyAndDevice}
                         </Typography>
                       </Alert>
                     )}
@@ -1355,7 +1524,7 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                           <History color="primary" />
                         </ListItemIcon>
                         <ListItemText 
-                          primary="최근 검색 기록" 
+                          primary={t.historyTitle} 
                           primaryTypographyProps={{ fontWeight: 'medium' }}
                         />
                         {historyOpen ? <ExpandLess /> : <ExpandMore />}
@@ -1379,11 +1548,11 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                   <div>
                     <Card elevation={3}>
                       <CardContent sx={{ p: 3 }}>
-                        <Typography variant="h6" gutterBottom color="primary">쿼리 파라미터</Typography>
+                        <Typography variant="h6" gutterBottom color="primary">{t.queryParams}</Typography>
                         
                         <Box sx={{ position: 'relative', mt: 2 }}>
                           <TextField
-                            label="API Key"
+                            label={t.apiKeyLabel}
                             variant="outlined"
                             fullWidth
                             margin="normal"
@@ -1395,7 +1564,7 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                         
                         <Box display="flex" alignItems="center" mt={2}>
                           <FormControl fullWidth margin="normal">
-                            <InputLabel id="keyspace-label">Keyspace</InputLabel>
+                            <InputLabel id="keyspace-label">{t.keyspaceLabel}</InputLabel>
                             <Select
                               labelId="keyspace-label"
                               id="keyspace"
@@ -1418,7 +1587,7 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                         
                         <Box sx={{ position: 'relative' }}>
                           <TextField
-                            label="Device ID"
+                            label={t.deviceIdLabel}
                             variant="outlined"
                             fullWidth
                             margin="normal"
@@ -1445,7 +1614,7 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                               }
                             }}
                           >
-                            {loading ? <CircularProgress size={24} color="inherit" /> : "조회하기"}
+                            {loading ? <CircularProgress size={24} color="inherit" /> : t.searchButton}
                           </Button>
                         </Box>
 
@@ -1453,7 +1622,7 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                           <Alert severity="error" sx={{ mt: 2 }}>
                             <Typography variant="subtitle2">{error.message}</Typography>
                             <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
-                              API 키와 디바이스 ID가 정확한지 확인하세요.
+                              {t.checkApiKeyAndDevice}
                             </Typography>
                           </Alert>
                         )}
@@ -1468,7 +1637,7 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                               <History color="primary" />
                             </ListItemIcon>
                             <ListItemText 
-                              primary="최근 검색 기록" 
+                              primary={t.historyTitle} 
                               primaryTypographyProps={{ fontWeight: 'medium' }}
                             />
                             {historyOpen ? <ExpandLess /> : <ExpandMore />}
@@ -1534,8 +1703,8 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                             sx={{ height: '400px' }}
                           >
                             <CircularProgress size={60} sx={{ mb: 2 }} />
-                            <Typography variant="body1">데이터 불러오는 중...</Typography>
-                            <Typography variant="body2" color="text.secondary">Singular API로부터 정보를 가져오고 있습니다</Typography>
+                            <Typography variant="body1">{t.loadingData}</Typography>
+                            <Typography variant="body2" color="text.secondary">{t.loadingFromApi}</Typography>
                           </Box>
                         </Fade>
                       )}
@@ -1567,10 +1736,10 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                               sx={{ width: 60, height: 60, opacity: 0.2, mb: 2 }}
                             />
                             <Typography variant="h6" color="text.secondary" gutterBottom>
-                              결과가 여기에 표시됩니다
+                              {t.resultsShownHere}
                             </Typography>
                             <Typography variant="body2" color="text.secondary" align="center" sx={{ maxWidth: '80%' }}>
-                              왼쪽에서 파라미터를 입력하고 조회하기 버튼을 클릭하세요
+                              {t.enterParamsInstruction}
                             </Typography>
                           </Box>
                         </Fade>
@@ -1590,7 +1759,7 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                             }}
                           >
                             <Typography variant="h6" gutterBottom>
-                              요청 실패
+                              {t.requestFailed}
                             </Typography>
                             <Typography variant="body1" paragraph>
                               {error.message}
@@ -1604,7 +1773,7 @@ SDID: Singular Device ID - used for web tracking. You can read the Singular Devi
                                   fontFamily: 'monospace'
                                 }}>
                                   {typeof error.detail === 'string' && error.detail.includes('<!DOCTYPE html>') 
-                                    ? "HTML 응답을 받았습니다. API 주소를 확인하세요." 
+                                    ? t.htmlResponseError 
                                     : JSON.stringify(error.detail, null, 2)}
                                 </pre>
                               </Paper>
