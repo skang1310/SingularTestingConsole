@@ -706,7 +706,7 @@ export default function SingularDebugger({ systemTheme }) {
                       console.log('앱 아이콘 로딩 실패:', e.target.src);
                       // 이미지 로딩 실패 시 기본 이미지 제공
                       e.target.onerror = null; // 무한 루프 방지
-                      e.target.src = 'https://i.imgur.com/rDkoZNh.png';
+                      e.target.src = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTN_2IRP4j6IsxPzI5-K4Sp7jjErtzsaeWE6Q&s';
                     }}
                   />
                 ) : (
