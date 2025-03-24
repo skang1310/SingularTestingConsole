@@ -92,7 +92,9 @@ export default function SingularDebugger({ systemTheme }) {
   const [searchHistory, setSearchHistory] = useState([]);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [useMockData, setUseMockData] = useState(false); // 내부 테스트용 (UI에서는 숨김 처리)
+  const [appName, setAppName] = useState("");
   const [appIcon, setAppIcon] = useState(null);
+  const [appLongName, setAppLongName] = useState("");
   const [language, setLanguage] = useState(localStorage.getItem('language') || 'ko');
   const [logoIsLoading, setLogoIsLoading] = useState(true);
 
@@ -388,13 +390,13 @@ export default function SingularDebugger({ systemTheme }) {
     try {
       setLogoIsLoading(true);
       
-      if (!app_long_name) {
+      if (!appLongName) {
         setLogoIsLoading(false);
         return;
       }
 
       // Use the Netlify function to fetch the app icon
-      const response = await fetch(`/.netlify/functions/app-icon?package_name=${encodeURIComponent(app_long_name)}`);
+      const response = await fetch(`/.netlify/functions/app-icon?package_name=${encodeURIComponent(appLongName)}`);
       
       if (!response.ok) {
         throw new Error(`Failed to fetch app icon: ${response.statusText}`);
@@ -478,6 +480,7 @@ export default function SingularDebugger({ systemTheme }) {
         // 앱 아이콘 가져오기
         const appData = mockData[0];
         const { app_long_name } = appData;
+        setAppLongName(app_long_name);
         fetchAppIcon();
         
         setLoading(false);
@@ -570,6 +573,7 @@ export default function SingularDebugger({ systemTheme }) {
       // 앱 아이콘 가져오기
       const appData = actualData[0];
       const { app_long_name } = appData;
+      setAppLongName(app_long_name);
       fetchAppIcon();
       
     } catch (err) {
@@ -1044,6 +1048,7 @@ export default function SingularDebugger({ systemTheme }) {
         const appData = item.result[0];
         const { app_long_name } = appData;
         if (app_long_name) {
+          setAppLongName(app_long_name);
           fetchAppIcon();
         }
       }
