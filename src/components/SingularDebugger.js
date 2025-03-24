@@ -400,8 +400,30 @@ export default function SingularDebugger({ systemTheme }) {
 
       console.log(`앱 아이콘 가져오기 시작: ${appLongName}`);
       
+      // 인기 앱 패키지명에 따른 직접 아이콘 URL 매핑
+      const popularAppIcons = {
+        'com.instagram.android': 'https://play-lh.googleusercontent.com/c2DcVsBUhJb3a-Q-LOdCIJs5NMhKqO4Hh6KhUAkBr1vNu0XieFqXoQYL8yvDWQYJNj4=s180',
+        'com.facebook.katana': 'https://play-lh.googleusercontent.com/ccWDU4A7fX1R24v-vvT480ySh26AYp97g1VrIB_FIdjRcuQB2JP2WdY7h_wVVAeSpg=s180',
+        'com.google.android.youtube': 'https://play-lh.googleusercontent.com/lMoItBgdPPVDJsNOVtP26EKHePkwBg-PkuY9NOrc-fumRtTFP4XhpUNk_22syN4Datc=s180',
+        'com.twitter.android': 'https://play-lh.googleusercontent.com/wIf3HtczQDjHzHuu7vezhqNs0zXAG85F7VmP7nhsTxO3OHegrVXlqIh_DWBYi86FTIGk=s180',
+        'com.spotify.music': 'https://play-lh.googleusercontent.com/UrY7BAZ-XfXGpfkeWg0zCCeo-7ras4DCoRalC_WXXWTK9q5b0Iw7B0YQMsVxZaNB7DM=s180',
+        'com.netflix.mediaclient': 'https://play-lh.googleusercontent.com/TBRwjS_qfJCSj1m7zZB93FnpJM5fSpMA_wUlFDLxWAb45T9RmwBvQd5cWR5viJJOhkI=s180',
+        'com.tiktok.tiktok': 'https://play-lh.googleusercontent.com/iBYjvYuNq8BB7EEJHexVtTKILQrWEwHfDKAl-cYPvJ-0ewpGdVTmIbR-C49MKwj3Uw=s180'
+      };
+      
+      // 1. 알려진 인기 앱인 경우 직접 아이콘 URL 사용
+      if (popularAppIcons[appLongName]) {
+        console.log(`인기 앱 아이콘 발견: ${appLongName}`);
+        setAppIcon(popularAppIcons[appLongName]);
+        setLogoIsLoading(false);
+        return;
+      }
+      
+      // 2. 직접 URL 생성 시도 (Google Play 이미지 패턴 활용)
+      const directIconUrl = `https://play-lh.googleusercontent.com/proxy-app-icons/${appLongName}=s180`;
+      
       try {
-        // Use the Netlify function to fetch the app icon
+        // 3. Netlify 함수를 통해 앱 아이콘 가져오기
         const response = await fetch(`/.netlify/functions/app-icon?package_name=${encodeURIComponent(appLongName)}`);
         
         console.log('앱 아이콘 API 응답:', response.status, response.statusText);
@@ -417,18 +439,21 @@ export default function SingularDebugger({ systemTheme }) {
           console.log('앱 아이콘 URL 설정:', data.icon_url);
           setAppIcon(data.icon_url);
         } else {
-          throw new Error('No icon URL in response');
+          // 4. API에서 아이콘 URL을 반환하지 않은 경우 직접 생성한 URL 사용
+          console.log('API에서 아이콘 URL을 반환하지 않아 직접 생성한 URL 사용:', directIconUrl);
+          setAppIcon(directIconUrl);
         }
       } catch (fetchError) {
         console.error("API 호출 오류:", fetchError);
-        // API 호출 실패 시 로컬 스마트폰 앱 아이콘 사용
-        setAppIcon('/app-icon.png');
+        // 5. API 호출 실패 시 직접 생성한 URL 사용
+        console.log('API 호출 실패로 직접 생성한 URL 사용:', directIconUrl);
+        setAppIcon(directIconUrl);
       }
       
       setLogoIsLoading(false);
     } catch (error) {
       console.error("앱 아이콘 가져오기 오류:", error);
-      // 오류 발생 시 로컬 스마트폰 앱 아이콘 사용
+      // 6. 모든 오류 발생 시 로컬 스마트폰 앱 아이콘 사용
       setAppIcon('/app-icon.png');
       setLogoIsLoading(false);
     }
