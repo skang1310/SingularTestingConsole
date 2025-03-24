@@ -393,39 +393,43 @@ export default function SingularDebugger({ systemTheme }) {
       if (!appLongName) {
         console.log('앱 패키지명이 없어 아이콘을 가져올 수 없습니다.');
         setLogoIsLoading(false);
-        // 앱 패키지명이 없을 경우 기본 스마트폰 앱 아이콘 사용
-        setAppIcon('https://cdn-icons-png.flaticon.com/512/2991/2991112.png');
+        // 앱 패키지명이 없을 경우 로컬 스마트폰 앱 아이콘 사용
+        setAppIcon('/app-icon.png');
         return;
       }
 
       console.log(`앱 아이콘 가져오기 시작: ${appLongName}`);
       
-      // Use the Netlify function to fetch the app icon
-      const response = await fetch(`/.netlify/functions/app-icon?package_name=${encodeURIComponent(appLongName)}`);
-      
-      console.log('앱 아이콘 API 응답:', response.status, response.statusText);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch app icon: ${response.statusText}`);
-      }
-      
-      const data = await response.json();
-      console.log('앱 아이콘 데이터:', data);
-      
-      if (data.icon_url) {
-        console.log('앱 아이콘 URL 설정:', data.icon_url);
-        setAppIcon(data.icon_url);
-      } else {
-        console.log('앱 아이콘 URL이 없어 기본 아이콘 사용');
-        // 앱 아이콘을 찾지 못한 경우 스마트폰 앱 아이콘 사용
-        setAppIcon('https://cdn-icons-png.flaticon.com/512/2991/2991112.png');
+      try {
+        // Use the Netlify function to fetch the app icon
+        const response = await fetch(`/.netlify/functions/app-icon?package_name=${encodeURIComponent(appLongName)}`);
+        
+        console.log('앱 아이콘 API 응답:', response.status, response.statusText);
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch app icon: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('앱 아이콘 데이터:', data);
+        
+        if (data && data.icon_url) {
+          console.log('앱 아이콘 URL 설정:', data.icon_url);
+          setAppIcon(data.icon_url);
+        } else {
+          throw new Error('No icon URL in response');
+        }
+      } catch (fetchError) {
+        console.error("API 호출 오류:", fetchError);
+        // API 호출 실패 시 로컬 스마트폰 앱 아이콘 사용
+        setAppIcon('/app-icon.png');
       }
       
       setLogoIsLoading(false);
     } catch (error) {
       console.error("앱 아이콘 가져오기 오류:", error);
-      // 오류 발생 시 스마트폰 앱 아이콘 사용
-      setAppIcon('https://cdn-icons-png.flaticon.com/512/2991/2991112.png');
+      // 오류 발생 시 로컬 스마트폰 앱 아이콘 사용
+      setAppIcon('/app-icon.png');
       setLogoIsLoading(false);
     }
   };
@@ -736,9 +740,9 @@ export default function SingularDebugger({ systemTheme }) {
                     }} 
                     onError={(e) => {
                       console.log('앱 아이콘 로딩 실패:', e.target.src);
-                      // 이미지 로딩 실패 시 기본 이미지 제공
+                      // 이미지 로딩 실패 시 로컬 스마트폰 앱 아이콘 제공
                       e.target.onerror = null; // 무한 루프 방지
-                      e.target.src = 'https://cdn-icons-png.flaticon.com/512/2991/2991112.png';
+                      e.target.src = '/app-icon.png';
                     }}
                   />
                 ) : (
