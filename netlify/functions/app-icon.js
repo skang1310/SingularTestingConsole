@@ -35,7 +35,10 @@ exports.handler = async (event) => {
     // 쿼리 파라미터에서 패키지명 추출
     const packageName = event.queryStringParameters.package_name;
     
+    console.log(`[app-icon] Received request for package: ${packageName}`);
+    
     if (!packageName) {
+      console.log('[app-icon] Error: Package name is missing');
       return {
         statusCode: 400,
         headers,
@@ -45,25 +48,33 @@ exports.handler = async (event) => {
 
     // 구글 플레이 스토어 URL
     const url = `https://play.google.com/store/apps/details?id=${encodeURIComponent(packageName)}&hl=en`;
+    console.log(`[app-icon] Fetching from URL: ${url}`);
     
     // 랜덤 User-Agent 설정
+    const userAgent = getRandomUserAgent();
+    console.log(`[app-icon] Using User-Agent: ${userAgent}`);
+    
     const requestHeaders = {
-      'User-Agent': getRandomUserAgent(),
+      'User-Agent': userAgent,
       'Accept-Language': 'en-US,en;q=0.9',
       'Accept': 'text/html,application/xhtml+xml,application/xml',
       'Referer': 'https://www.google.com/'
     };
 
     // 구글 플레이 스토어 페이지 요청
+    console.log('[app-icon] Sending request to Google Play Store');
     const response = await axios.get(url, { headers: requestHeaders });
+    console.log('[app-icon] Received response from Google Play Store');
     const html = response.data;
     
     // HTML 파싱
     const $ = cheerio.load(html);
+    console.log('[app-icon] HTML parsed successfully');
     
     // 방법 1: Open Graph 이미지 메타 태그 확인
     const ogImage = $('meta[property="og:image"]').attr('content');
     if (ogImage) {
+      console.log(`[app-icon] Found OG image: ${ogImage}`);
       return {
         statusCode: 200,
         headers,
@@ -77,8 +88,11 @@ exports.handler = async (event) => {
     // 앱 아이콘일 가능성이 높은 이미지 태그 찾기
     $('img').each((i, elem) => {
       const alt = $(elem).attr('alt');
+      const src = $(elem).attr('src');
+      console.log(`[app-icon] Checking image ${i}: alt="${alt}", src="${src?.substring(0, 50)}..."`);
       if (alt && (alt.toLowerCase().includes('icon') || alt.toLowerCase().includes('logo'))) {
-        iconUrl = $(elem).attr('src');
+        iconUrl = src;
+        console.log(`[app-icon] Found icon image: ${iconUrl}`);
         return false; // 찾았으면 루프 종료
       }
     });
@@ -94,6 +108,7 @@ exports.handler = async (event) => {
     // 방법 3: HTML에서 이미지 URL 패턴 찾기
     const matches = html.match(/(https?:\/\/play-lh\.googleusercontent\.com\/[^"'\s]+)/g);
     if (matches && matches.length > 0) {
+      console.log(`[app-icon] Found image URL pattern: ${matches[0]}`);
       return {
         statusCode: 200,
         headers,
@@ -102,6 +117,7 @@ exports.handler = async (event) => {
     }
     
     // 아이콘을 찾지 못한 경우
+    console.log('[app-icon] No app icon found');
     return {
       statusCode: 404,
       headers,
@@ -109,7 +125,7 @@ exports.handler = async (event) => {
     };
     
   } catch (error) {
-    console.error('Error:', error);
+    console.error('[app-icon] Error:', error);
     
     return {
       statusCode: 500,
