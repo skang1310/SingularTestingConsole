@@ -384,18 +384,36 @@ export default function SingularDebugger({ systemTheme }) {
     }
   };
 
-  const fetchAppIcon = async (appName) => {
-    if (!appName) return;
-    
+  const fetchAppIcon = async () => {
     try {
-      // For demo purposes, we'll use a placeholder icon from a popular app
-      // In a real implementation, you would use a proper API to fetch the app icon
-      const iconUrl = `https://play-lh.googleusercontent.com/bYtqbOcTYOlgc6gqZ2uwL4BptGW3YV_D0wPbyWbbTKSabhqE4TQUyKB9s9GHodqyPw=w240-h480-rw`;
+      setLogoIsLoading(true);
       
-      setAppIcon(iconUrl);
+      if (!app_long_name) {
+        setLogoIsLoading(false);
+        return;
+      }
+
+      // Use the Netlify function to fetch the app icon
+      const response = await fetch(`/.netlify/functions/app-icon?package_name=${encodeURIComponent(app_long_name)}`);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch app icon: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      
+      if (data.icon_url) {
+        setAppIcon(data.icon_url);
+      } else {
+        // Fallback to a default Google Play icon if the API doesn't return an icon URL
+        setAppIcon('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTN_2IRP4j6IsxPzI5-K4Sp7jjErtzsaeWE6Q&s');
+      }
+      
       setLogoIsLoading(false);
     } catch (error) {
       console.error("Error fetching app icon:", error);
+      // Set a fallback icon in case of error
+      setAppIcon('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTN_2IRP4j6IsxPzI5-K4Sp7jjErtzsaeWE6Q&s');
       setLogoIsLoading(false);
     }
   };
@@ -460,7 +478,7 @@ export default function SingularDebugger({ systemTheme }) {
         // 앱 아이콘 가져오기
         const appData = mockData[0];
         const { app_long_name } = appData;
-        fetchAppIcon(app_long_name);
+        fetchAppIcon();
         
         setLoading(false);
       }, 1000);
@@ -552,7 +570,7 @@ export default function SingularDebugger({ systemTheme }) {
       // 앱 아이콘 가져오기
       const appData = actualData[0];
       const { app_long_name } = appData;
-      fetchAppIcon(app_long_name);
+      fetchAppIcon();
       
     } catch (err) {
       console.error("API 요청 오류:", err);
@@ -1026,7 +1044,7 @@ export default function SingularDebugger({ systemTheme }) {
         const appData = item.result[0];
         const { app_long_name } = appData;
         if (app_long_name) {
-          fetchAppIcon(app_long_name);
+          fetchAppIcon();
         }
       }
     }
