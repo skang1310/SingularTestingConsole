@@ -98,6 +98,9 @@ export default function SingularDebugger({ systemTheme }) {
   const [language, setLanguage] = useState(localStorage.getItem('language') || 'ko');
   const [logoIsLoading, setLogoIsLoading] = useState(true);
 
+  // 앱 아이콘 캐시 객체
+  const appIconCache = {};
+
   const theme = useMemo(() => createTheme({
     palette: {
       mode: darkMode ? 'dark' : 'light',
@@ -398,6 +401,14 @@ export default function SingularDebugger({ systemTheme }) {
         return;
       }
 
+      // 캐시된 아이콘이 있는 경우 사용
+      if (appIconCache[appLongName]) {
+        console.log(`캐시된 앱 아이콘 사용: ${appLongName}`);
+        setAppIcon(appIconCache[appLongName]);
+        setLogoIsLoading(false);
+        return;
+      }
+
       console.log(`앱 아이콘 가져오기 시작: ${appLongName}`);
       
       // 인기 앱 패키지명에 따른 직접 아이콘 URL 매핑
@@ -411,49 +422,51 @@ export default function SingularDebugger({ systemTheme }) {
         'com.tiktok.tiktok': 'https://play-lh.googleusercontent.com/iBYjvYuNq8BB7EEJHexVtTKILQrWEwHfDKAl-cYPvJ-0ewpGdVTmIbR-C49MKwj3Uw=s180'
       };
       
-      // 1. 알려진 인기 앱인 경우 직접 아이콘 URL 사용
+      // 1. 알려진 인기 앱인 경우 직접 아이콘 URL 사용 (가장 빠름)
       if (popularAppIcons[appLongName]) {
         console.log(`인기 앱 아이콘 발견: ${appLongName}`);
-        setAppIcon(popularAppIcons[appLongName]);
+        const iconUrl = popularAppIcons[appLongName];
+        setAppIcon(iconUrl);
+        appIconCache[appLongName] = iconUrl; // 캐시에 저장
         setLogoIsLoading(false);
         return;
       }
       
-      // 2. 직접 URL 생성 시도 (Google Play 이미지 패턴 활용)
+      // 2. 직접 URL 생성 (빠름)
       const directIconUrl = `https://play-lh.googleusercontent.com/proxy-app-icons/${appLongName}=s180`;
       
-      try {
-        // 3. Netlify 함수를 통해 앱 아이콘 가져오기
-        const response = await fetch(`/.netlify/functions/app-icon?package_name=${encodeURIComponent(appLongName)}`);
-        
-        console.log('앱 아이콘 API 응답:', response.status, response.statusText);
-        
-        if (!response.ok) {
-          throw new Error(`Failed to fetch app icon: ${response.statusText}`);
-        }
-        
-        const data = await response.json();
-        console.log('앱 아이콘 데이터:', data);
-        
-        if (data && data.icon_url) {
-          console.log('앱 아이콘 URL 설정:', data.icon_url);
-          setAppIcon(data.icon_url);
-        } else {
-          // 4. API에서 아이콘 URL을 반환하지 않은 경우 직접 생성한 URL 사용
-          console.log('API에서 아이콘 URL을 반환하지 않아 직접 생성한 URL 사용:', directIconUrl);
-          setAppIcon(directIconUrl);
-        }
-      } catch (fetchError) {
-        console.error("API 호출 오류:", fetchError);
-        // 5. API 호출 실패 시 직접 생성한 URL 사용
-        console.log('API 호출 실패로 직접 생성한 URL 사용:', directIconUrl);
-        setAppIcon(directIconUrl);
-      }
+      // 먼저 직접 생성한 URL을 사용하여 UI를 빠르게 업데이트
+      setAppIcon(directIconUrl);
       
-      setLogoIsLoading(false);
+      // 3. 백그라운드에서 Netlify 함수를 통해 더 정확한 앱 아이콘 가져오기 시도
+      fetch(`/.netlify/functions/app-icon?package_name=${encodeURIComponent(appLongName)}`)
+        .then(response => {
+          console.log('앱 아이콘 API 응답:', response.status, response.statusText);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch app icon: ${response.statusText}`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          console.log('앱 아이콘 데이터:', data);
+          if (data && data.icon_url) {
+            console.log('앱 아이콘 URL 설정:', data.icon_url);
+            setAppIcon(data.icon_url);
+            appIconCache[appLongName] = data.icon_url; // 캐시에 저장
+          }
+        })
+        .catch(error => {
+          console.error("API 호출 오류:", error);
+          // API 호출 실패 시 이미 설정된 directIconUrl 유지
+          appIconCache[appLongName] = directIconUrl; // 캐시에 저장
+        })
+        .finally(() => {
+          setLogoIsLoading(false);
+        });
+      
     } catch (error) {
       console.error("앱 아이콘 가져오기 오류:", error);
-      // 6. 모든 오류 발생 시 로컬 스마트폰 앱 아이콘 사용
+      // 모든 오류 발생 시 로컬 스마트폰 앱 아이콘 사용
       setAppIcon('/app-icon.png');
       setLogoIsLoading(false);
     }
