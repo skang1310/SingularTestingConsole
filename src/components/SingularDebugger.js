@@ -68,13 +68,27 @@ import {
 import axios from "axios";
 import { keyframes } from '@mui/system';
 
+/**
+ * SingularDebugger 컴포넌트
+ * 
+ * Singular 어트리뷰션 데이터를 조회하고 표시하는 메인 컴포넌트입니다.
+ * 
+ * @param {Object} props - 컴포넌트 속성
+ * @param {string} props.systemTheme - 시스템 테마 설정 ('dark' 또는 'light')
+ * @returns {JSX.Element} SingularDebugger 컴포넌트
+ */
 export default function SingularDebugger({ systemTheme }) {
-  const [apiKey, setApiKey] = useState("");
-  const [deviceId, setDeviceId] = useState("");
-  const [keyspace, setKeyspace] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
+  // ===== 상태 변수 정의 =====
+  
+  // API 요청 관련 상태
+  const [apiKey, setApiKey] = useState(""); // Singular API 키
+  const [deviceId, setDeviceId] = useState(""); // 디바이스 ID
+  const [keyspace, setKeyspace] = useState(""); // 키스페이스 (IDFA, AIFA 등)
+  const [loading, setLoading] = useState(false); // 로딩 상태
+  const [result, setResult] = useState(null); // API 응답 결과
+  const [error, setError] = useState(null); // 오류 메시지
+  
+  // UI 관련 상태
   const [darkMode, setDarkMode] = useState(() => {
     // 시스템 다크모드 설정 감지
     const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -83,63 +97,34 @@ export default function SingularDebugger({ systemTheme }) {
     // 저장된 설정이 있으면 그 값 사용, 없으면 시스템 설정 사용
     return savedPreference !== null ? savedPreference === 'true' : systemPrefersDark;
   });
-  const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [sortField, setSortField] = useState("event_name");
-  const [sortDirection, setSortDirection] = useState("asc");
-  const [deviceIdError, setDeviceIdError] = useState("");
-  const [hasSearched, setHasSearched] = useState(false);
-  const [searchHistory, setSearchHistory] = useState([]);
-  const [historyOpen, setHistoryOpen] = useState(false);
-  const [useMockData, setUseMockData] = useState(false); // 내부 테스트용 (UI에서는 숨김 처리)
-  const [appName, setAppName] = useState("");
-  const [appIcon, setAppIcon] = useState(null);
-  const [appLongName, setAppLongName] = useState("");
-  const [language, setLanguage] = useState(localStorage.getItem('language') || 'ko');
-  const [logoIsLoading, setLogoIsLoading] = useState(true);
-
-  // 앱 아이콘 캐시 객체
-  const appIconCache = {};
-
-  const theme = useMemo(() => createTheme({
-    palette: {
-      mode: darkMode ? 'dark' : 'light',
-      primary: {
-        main: '#1976d2',
-      },
-      secondary: {
-        main: '#dc004e',
-      },
-      background: {
-        default: darkMode ? '#0a0e16' : '#f5f5f5',
-        paper: darkMode ? '#151d2a' : '#ffffff',
-      },
-      text: {
-        primary: darkMode ? '#ffffff' : '#1a1a2e',
-        secondary: darkMode ? '#b0b0b0' : '#666666',
-      },
-    },
-    components: {
-      MuiCssBaseline: {
-        styleOverrides: {
-          body: {
-            transition: 'all 0.3s ease',
-          },
-        },
-      },
-    },
-  }), [darkMode]);
-
-  // Singular 로고 Base64 인코딩 (로고 이미지를 직접 소스 코드에 포함)
-  const singularLogoBase64 = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvfg-L9ImP6SiqLRxJc03e_jSvaR25KybCHw&s";
+  const [openSnackbar, setOpenSnackbar] = useState(false); // 스낵바 표시 여부
+  const [snackbarMessage, setSnackbarMessage] = useState(""); // 스낵바 메시지
+  const [sortField, setSortField] = useState("event_name"); // 정렬 필드
+  const [sortDirection, setSortDirection] = useState("asc"); // 정렬 방향
+  const [deviceIdError, setDeviceIdError] = useState(""); // 디바이스 ID 오류 메시지
+  const [hasSearched, setHasSearched] = useState(false); // 검색 여부
   
-  // Singular 아이콘 Base64 인코딩
-  const singularIconBase64 = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMCAzMCI+PHBhdGggZD0iTTEwLjQgMTEuMkMxMC40IDE3LjUgMCAxNy4zIDAgMjMuN2MwIDQuNCAzIDYuMiA2LjMgNi4yIDUuNCAwIDguNy00LjEgOC43LTlVN2g1LjF2MTMuOWMwIDEwLjEtNy42IDE0LTQuOSAyMy4xLTEuOS0uNi0xNC00LjQtMTQtMTNDMS4zIDIzLjcgMTEgMTQuNCAxMiAxMS4yYzAtMi42LTEuNi0zLTkuMy0yQzMuMiAxLjMgMTEuNSAwIDE2LjEgMGM0LjUgMCA3LjYgMi44IDcuNiA2LjIgMCAzLTIgNS01IDVzLTYtMi42LTYtNS4ydjUuMmMwIDIuNyAyLjIgNC45IDQuOSA0LjlzNS0yLjIgNS00LjlWMEgyNlY2SDEwLjQiIGZpbGw9IiMwMDM5Y2IiLz48L3N2Zz4=";
+  // 검색 히스토리 관련 상태
+  const [searchHistory, setSearchHistory] = useState([]); // 검색 히스토리
+  const [historyOpen, setHistoryOpen] = useState(false); // 히스토리 표시 여부
+  
+  // 테스트 및 앱 정보 관련 상태
+  const [useMockData, setUseMockData] = useState(false); // 목업 데이터 사용 여부 (내부 테스트용)
+  const [appName, setAppName] = useState(""); // 앱 이름
+  const [appIcon, setAppIcon] = useState(null); // 앱 아이콘 URL
+  const [appLongName, setAppLongName] = useState(""); // 앱 패키지명
+  const [language, setLanguage] = useState(localStorage.getItem('language') || 'ko'); // 언어 설정
+  const [logoIsLoading, setLogoIsLoading] = useState(true); // 로고 로딩 상태
 
+  // 앱 아이콘 캐시 객체 - 한 번 불러온 아이콘을 저장하여 재사용
+  const appIconCache = {};
+  
+  // ===== 다국어 지원 =====
+  
   // 언어 관련 텍스트 객체
   const translations = {
     ko: {
-      title: 'Singular 어트리뷰션 디버거',
+      title: 'Testing Console',
       apiKeyLabel: 'API Key',
       deviceIdLabel: 'Device ID',
       keyspaceLabel: 'Keyspace',
@@ -190,7 +175,7 @@ export default function SingularDebugger({ systemTheme }) {
       footer: '2025 DK'
     },
     en: {
-      title: 'Singular Attribution Debugger',
+      title: 'Testing Console',
       apiKeyLabel: 'API Key',
       deviceIdLabel: 'Device ID',
       keyspaceLabel: 'Keyspace',
@@ -296,16 +281,31 @@ export default function SingularDebugger({ systemTheme }) {
   // 현재 선택된 언어에 대한 번역 텍스트
   const t = translations[language];
 
+  // 모바일 화면 여부 감지
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  // Toggle dark mode and save preference to localStorage
+  /**
+   * 다크 모드 토글 함수
+   * 다크 모드를 켜거나 끄고 설정을 로컬 스토리지에 저장합니다.
+   */
   const toggleDarkMode = () => {  
     const newMode = !darkMode;
     setDarkMode(newMode);
     localStorage.setItem('darkMode', newMode.toString());
   };
+  
+  /**
+   * 히스토리 토글 함수
+   * 검색 히스토리 표시를 켜거나 끕니다.
+   */
   const toggleHistory = () => setHistoryOpen(!historyOpen);
 
+  // ===== 생명주기 함수 =====
+  
+  /**
+   * 컴포넌트 마운트 시 실행되는 효과
+   * 페이지 새로고침 시 로컬 스토리지 데이터를 초기화하고 저장된 히스토리를 불러옵니다.
+   */
   useEffect(() => {
     // 페이지 새로고침 시 localStorage 데이터 초기화
     localStorage.removeItem("singular_result");
@@ -324,18 +324,32 @@ export default function SingularDebugger({ systemTheme }) {
     }
   }, []);
 
+  /**
+   * 결과 변경 시 실행되는 효과
+   * API 응답 결과를 로컬 스토리지에 저장합니다.
+   */
   useEffect(() => {
     if (result) {
       localStorage.setItem("singular_result", JSON.stringify(result));
     }
   }, [result]);
 
+  /**
+   * 시스템 테마 변경 시 실행되는 효과
+   * 시스템 테마에 따라 다크 모드를 설정합니다.
+   */
   useEffect(() => {
     if (systemTheme) {
       setDarkMode(systemTheme === 'dark');
     }
   }, [systemTheme]);
 
+  /**
+   * 디바이스 ID 유효성 검사 함수
+   * 키스페이스에 따라 디바이스 ID 형식이 올바른지 확인합니다.
+   * 
+   * @returns {boolean} 유효성 검사 결과
+   */
   const validateDeviceId = () => {
     if (!deviceId || !keyspace) return true;
     
@@ -353,6 +367,12 @@ export default function SingularDebugger({ systemTheme }) {
     return true;
   };
   
+  /**
+   * 디바이스 ID 변경 처리 함수
+   * 디바이스 ID 입력값이 변경될 때 호출되며, 즉시 유효성을 검사합니다.
+   * 
+   * @param {Object} e - 이벤트 객체
+   */
   const handleDeviceIdChange = (e) => {
     const newDeviceId = e.target.value;
     setDeviceId(newDeviceId);
@@ -373,6 +393,12 @@ export default function SingularDebugger({ systemTheme }) {
     }
   };
   
+  /**
+   * 키스페이스 변경 처리 함수
+   * 키스페이스 선택이 변경될 때 호출되며, 디바이스 ID의 유효성을 다시 검사합니다.
+   * 
+   * @param {Object} e - 이벤트 객체
+   */
   const handleKeyspaceChange = (e) => {
     const newKeyspace = e.target.value;
     setKeyspace(newKeyspace);
@@ -389,10 +415,16 @@ export default function SingularDebugger({ systemTheme }) {
     }
   };
 
+  /**
+   * 앱 아이콘 가져오기 함수
+   * 앱 패키지명을 기반으로 앱 아이콘을 가져옵니다.
+   * 여러 단계의 폴백 메커니즘을 통해 항상 아이콘이 표시되도록 합니다.
+   */
   const fetchAppIcon = async () => {
     try {
       setLogoIsLoading(true);
       
+      // 앱 패키지명이 없는 경우 기본 아이콘 사용
       if (!appLongName) {
         console.log('앱 패키지명이 없어 아이콘을 가져올 수 없습니다.');
         setLogoIsLoading(false);
@@ -401,7 +433,7 @@ export default function SingularDebugger({ systemTheme }) {
         return;
       }
 
-      // 캐시된 아이콘이 있는 경우 사용
+      // 캐시된 아이콘이 있는 경우 사용 (가장 빠름)
       if (appIconCache[appLongName]) {
         console.log(`캐시된 앱 아이콘 사용: ${appLongName}`);
         setAppIcon(appIconCache[appLongName]);
@@ -472,7 +504,67 @@ export default function SingularDebugger({ systemTheme }) {
     }
   };
 
+  // 앱 헤더 렌더링 함수
+  const renderAppHeader = () => {
+    if (!result || !result[0]) return null;
+    
+    const appData = result[0];
+    const { app_name, app_long_name, app_store_link } = appData;
+    
+    return (
+      <Card sx={{ mb: 2, mt: 2, overflow: 'visible' }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <Avatar 
+              src={appIcon} 
+              alt={app_name || t.appName} 
+              sx={{ 
+                width: 60, 
+                height: 60, 
+                mr: 2,
+                border: '1px solid rgba(0,0,0,0.1)',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+              }} 
+              variant="rounded"
+              onError={(e) => {
+                console.log('앱 아이콘 로딩 실패:', e.target.src);
+                // 이미지 로딩 실패 시 로컬 스마트폰 앱 아이콘 제공
+                e.target.onerror = null; // 무한 루프 방지
+                e.target.src = '/app-icon.png';
+              }}
+            />
+            <Box>
+              <Typography variant="h6" component="div">
+                {app_name || t.infoMissing}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ wordBreak: 'break-all' }}>
+                {app_long_name || t.infoMissing}
+              </Typography>
+              {app_store_link && (
+                <Button 
+                  size="small" 
+                  startIcon={keyspace === 'android_advertising_id' ? <ShopTwo /> : <Apple />}
+                  href={app_store_link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{ mt: 1 }}
+                >
+                  {t.storeLink}
+                </Button>
+              )}
+            </Box>
+          </Box>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  /**
+   * Singular API를 통해 어트리뷰션 데이터를 가져오는 함수
+   * API 키, 디바이스 ID, 키스페이스를 사용하여 Singular API에 요청을 보냅니다.
+   */
   const fetchAttribution = async () => {
+    // 필수 필드 검증
     if (!apiKey || !deviceId || !keyspace) {
       setSnackbarMessage(t.allFields);
       setOpenSnackbar(true);
@@ -486,12 +578,13 @@ export default function SingularDebugger({ systemTheme }) {
       return;
     }
 
+    // 로딩 상태 설정 및 이전 결과 초기화
     setLoading(true);
     setError(null);
     setResult(null);
     setHasSearched(true);
 
-    // 실제 API URL 생성 - 대소문자 처리
+    // 디바이스 ID 형식 처리 (iOS는 대문자, Android는 소문자)
     let formattedDeviceId = deviceId;
     if (keyspace === "idfa" || keyspace === "idfv") {
       formattedDeviceId = deviceId.toUpperCase();
@@ -499,35 +592,19 @@ export default function SingularDebugger({ systemTheme }) {
       formattedDeviceId = deviceId.toLowerCase();
     }
     
-    // keyspace 값 처리 - android_advertising_id일 경우 AIFA로 변경
+    // 키스페이스 API 형식으로 변환 (android_advertising_id는 AIFA로 변경)
     let apiKeyspace = keyspace.toUpperCase();
     if (keyspace === "android_advertising_id") {
       apiKeyspace = "AIFA";
     }
     
-    // 테스트 모드일 경우 목업 데이터 사용
+    // 테스트 모드 처리 (목업 데이터 사용)
     if (useMockData || deviceId === "test" || deviceId === "테스트") {
       setTimeout(() => {
         setResult(mockData);
         
         // 검색 히스토리에 추가
-        const historyItem = {
-          apiKey,
-          deviceId: formattedDeviceId,
-          keyspace,
-          timestamp: new Date().toISOString(),
-          result: mockData
-        };
-        
-        // 중복 제거: 동일한 keyspace와 deviceId를 가진 항목 필터링
-        const filteredHistory = searchHistory.filter(
-          item => !(item.keyspace === keyspace && item.deviceId === formattedDeviceId)
-        );
-        
-        // 최신 항목 추가 및 최대 10개 유지
-        const updatedHistory = [historyItem, ...filteredHistory.slice(0, 9)];
-        setSearchHistory(updatedHistory);
-        localStorage.setItem("singular_history", JSON.stringify(updatedHistory));
+        addToSearchHistory(formattedDeviceId, keyspace, mockData);
 
         // 앱 아이콘 가져오기
         const appData = mockData[0];
@@ -540,10 +617,11 @@ export default function SingularDebugger({ systemTheme }) {
       return;
     }
     
+    // Singular API URL 생성
     const singularApiUrl = `https://api.singular.net/api/attribution/attribution_details?api_key=${apiKey}&device_id=${formattedDeviceId}&keyspace=${apiKeyspace}`;
 
     try {
-      // 다양한 CORS 프록시 서비스 시도
+      // CORS 이슈 해결을 위한 프록시 서비스 목록
       const corsProxies = [
         `https://api.allorigins.win/get?url=${encodeURIComponent(singularApiUrl)}`,
         `https://cors-anywhere.herokuapp.com/${singularApiUrl}`,
@@ -578,6 +656,7 @@ export default function SingularDebugger({ systemTheme }) {
         }
       }
       
+      // 모든 프록시 요청 실패 시 오류 발생
       if (!response) {
         throw error || new Error("모든 CORS 프록시 요청이 실패했습니다.");
       }
@@ -601,26 +680,11 @@ export default function SingularDebugger({ systemTheme }) {
         throw new Error("응답에 유효한 데이터가 없습니다.");
       }
       
+      // 결과 설정
       setResult(actualData);
       
       // 검색 히스토리에 추가
-      const historyItem = {
-        apiKey,
-        deviceId: formattedDeviceId,
-        keyspace,
-        timestamp: new Date().toISOString(),
-        result: actualData
-      };
-      
-      // 중복 제거: 동일한 keyspace와 deviceId를 가진 항목 필터링
-      const filteredHistory = searchHistory.filter(
-        item => !(item.keyspace === keyspace && item.deviceId === formattedDeviceId)
-      );
-      
-      // 최신 항목 추가 및 최대 10개 유지
-      const updatedHistory = [historyItem, ...filteredHistory.slice(0, 9)];
-      setSearchHistory(updatedHistory);
-      localStorage.setItem("singular_history", JSON.stringify(updatedHistory));
+      addToSearchHistory(formattedDeviceId, keyspace, actualData);
 
       // 앱 아이콘 가져오기
       const appData = actualData[0];
@@ -639,714 +703,136 @@ export default function SingularDebugger({ systemTheme }) {
     }
   };
 
-  const handleCloseSnackbar = () => {
-    setOpenSnackbar(false);
-  };
-
-  const keyspaceTooltip = t.keyspaceTooltip;
-
-  const handleSort = (field) => {
-    if (sortField === field) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
-    } else {
-      setSortField(field);
-      setSortDirection("asc");
-    }
-  };
-
-  const getSortedEvents = (events) => {
-    if (!events || !Array.isArray(events)) return [];
-    
-    return [...events].sort((a, b) => {
-      let valueA, valueB;
-      
-      switch (sortField) {
-        case "event_name":
-          valueA = a.event_name || "";
-          valueB = b.event_name || "";
-          break;
-        case "event_count":
-          valueA = a.event_count || 0;
-          valueB = b.event_count || 0;
-          break;
-        case "first_event_time":
-          valueA = a.first_event_time ? new Date(a.first_event_time).getTime() : 0;
-          valueB = b.first_event_time ? new Date(b.first_event_time).getTime() : 0;
-          break;
-        case "last_event_time":
-          valueA = a.last_event_time ? new Date(a.last_event_time).getTime() : 0;
-          valueB = b.last_event_time ? new Date(b.last_event_time).getTime() : 0;
-          break;
-        case "revenue_ltv":
-          valueA = a.revenue_ltv || 0;
-          valueB = b.revenue_ltv || 0;
-          break;
-        default:
-          return 0;
-      }
-      
-      if (typeof valueA === 'string') {
-        const comparison = valueA.localeCompare(valueB);
-        return sortDirection === "asc" ? comparison : -comparison;
-      } else {
-        return sortDirection === "asc" ? valueA - valueB : valueB - valueA;
-      }
-    });
-  };
-
-  const renderExcelTable = () => {
-    if (!result || !Array.isArray(result) || result.length === 0) {
-      return (
-        <Box sx={{ p: 3, textAlign: 'center' }}>
-          <Typography variant="body1" sx={{ mt: 2 }}>
-            {t.noResults}
-          </Typography>
-        </Box>
-      );
-    }
-
-    const appData = result[0];
-    const { app_name, app_long_name, install_info } = appData;
-    const events = appData.events || [];
-    const sortedEvents = getSortedEvents(events);
-
-    // 플랫폼 판별 (iOS 또는 Android)
-    const isIos = keyspace === 'idfa' || keyspace === 'idfv';
-    
-    // 총 수익 계산
-    const totalRevenue = events.reduce((total, event) => total + (event.revenue_ltv || 0), 0);
-
-    // 마지막 이벤트 찾기
-    const lastEvent = sortedEvents.length > 0 
-      ? sortedEvents.reduce((latest, event) => {
-          if (!latest.last_event_time) return event;
-          if (!event.last_event_time) return latest;
-          return new Date(event.last_event_time) > new Date(latest.last_event_time) ? event : latest;
-        }, { last_event_time: null })
-      : null;
-
-    const SortableTableHeader = ({ field, label }) => {
-      const isActive = sortField === field;
-      
-      return (
-        <TableCell 
-          onClick={() => handleSort(field)}
-          sx={{ 
-            cursor: 'pointer',
-            fontWeight: 'bold',
-            whiteSpace: 'nowrap',
-            bgcolor: 'primary.main',
-            color: 'white',
-            '&:hover': {
-              bgcolor: 'primary.main',
-            },
-            textAlign: 'center'
-          }}
-        >
-          <Box display="flex" alignItems="center" justifyContent="center">
-            {label}
-            <Box ml={0.5} display="flex" alignItems="center">
-              {isActive ? (
-                sortDirection === 'asc' ? <ArrowDropUp /> : <ArrowDropDown />
-              ) : (
-                <Box sx={{ width: 24, height: 24 }} />
-              )}
-            </Box>
-          </Box>
-        </TableCell>
-      );
+  /**
+   * 검색 히스토리에 항목을 추가하는 함수
+   * 
+   * @param {string} formattedDeviceId - 형식이 적용된 디바이스 ID
+   * @param {string} keyspace - 키스페이스
+   * @param {Object} data - API 응답 데이터
+   */
+  const addToSearchHistory = (formattedDeviceId, keyspace, data) => {
+    // 히스토리 항목 생성
+    const historyItem = {
+      apiKey,
+      deviceId: formattedDeviceId,
+      keyspace,
+      timestamp: new Date().toISOString(),
+      result: data
     };
-
-    return (
-      <>
-        <Box sx={{ mb: 3, p: 2, bgcolor: darkMode ? 'rgba(30, 41, 59, 0.5)' : 'background.default', borderRadius: 2 }}>
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={4}>
-              <Paper elevation={1} sx={{ p: 2, height: '100%', display: 'flex', alignItems: 'center' }}>
-                {appIcon ? (
-                  <Box 
-                    component="img" 
-                    src={appIcon} 
-                    alt={app_name} 
-                    sx={{ 
-                      width: 48, 
-                      height: 48, 
-                      borderRadius: '12px', 
-                      mr: 2,
-                      border: '1px solid',
-                      borderColor: 'divider'
-                    }} 
-                    onError={(e) => {
-                      console.log('앱 아이콘 로딩 실패:', e.target.src);
-                      // 이미지 로딩 실패 시 로컬 스마트폰 앱 아이콘 제공
-                      e.target.onerror = null; // 무한 루프 방지
-                      e.target.src = '/app-icon.png';
-                    }}
-                  />
-                ) : (
-                  <Avatar 
-                    sx={{ 
-                      bgcolor: isIos ? '#007AFF' : '#3DDC84', 
-                      width: 48, 
-                      height: 48,
-                      mr: 2
-                    }}
-                  >
-                    {isIos ? <Apple /> : <ShopTwo />}
-                  </Avatar>
-                )}
-                <Box sx={{ flexGrow: 1 }}>
-                  <Typography variant="body2" color="text.secondary">{t.appName}</Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <Typography variant="h6" noWrap sx={{ mr: 1 }}>{app_name || t.infoMissing}</Typography>
-                    {!isIos && app_long_name && (
-                      <Tooltip title={t.storeLink}>
-                        <Box
-                          component="a"
-                          href={`https://play.google.com/store/apps/details?id=${encodeURIComponent(app_long_name)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          sx={{ 
-                            display: 'flex',
-                            ml: 1
-                          }}
-                        >
-                          <Box 
-                            component="img" 
-                            src="/google.png" 
-                            alt="Google Play"
-                            sx={{ 
-                              height: 28,
-                              width: 28,
-                              borderRadius: '6px'
-                            }} 
-                          />
-                        </Box>
-                      </Tooltip>
-                    )}
-                    {isIos && app_long_name && (
-                      <Tooltip title={t.storeLink}>
-                        <Box
-                          component="a"
-                          href={`https://apps.apple.com/kr/app/id${encodeURIComponent(app_long_name)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          sx={{ 
-                            display: 'flex',
-                            ml: 1
-                          }}
-                        >
-                          <Box 
-                            component="img" 
-                            src="/apple.png" 
-                            alt="App Store"
-                            sx={{ 
-                              height: 28,
-                              width: 'auto'
-                            }} 
-                          />
-                        </Box>
-                      </Tooltip>
-                    )}
-                  </Box>
-                </Box>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <Paper elevation={1} sx={{ p: 2, height: '100%', display: 'flex', alignItems: 'center' }}>
-                <Avatar 
-                  sx={{ 
-                    bgcolor: 'primary.main', 
-                    width: 40, 
-                    height: 40,
-                    mr: 2
-                  }}
-                >
-                  <Share />
-                </Avatar>
-                <Box>
-                  <Typography variant="body2" color="text.secondary">{t.installNetwork}</Typography>
-                  <Typography variant="h6" noWrap>{install_info?.network || t.infoMissing}</Typography>
-                </Box>
-              </Paper>
-            </Grid>
-            <Grid item xs={12} sm={4}>
-              <Paper elevation={1} sx={{ p: 2, height: '100%', display: 'flex', alignItems: 'center' }}>
-                <Avatar 
-                  sx={{ 
-                    bgcolor: 'secondary.main', 
-                    width: 40, 
-                    height: 40,
-                    mr: 2
-                  }}
-                >
-                  <Schedule />
-                </Avatar>
-                <Box>
-                  <Typography variant="body2" color="text.secondary">{t.installTime}</Typography>
-                  <Typography variant="h6">{formatDateTime(install_info?.install_time) || t.infoMissing}</Typography>
-                </Box>
-              </Paper>
-            </Grid>
-          </Grid>
-        </Box>
-
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 2, mt: 4, alignItems: 'center' }}>
-          <Typography variant="h6" color="primary" align="center">{t.eventListTitle}</Typography>
-        </Box>
-        
-        <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
-          <Box>
-            {lastEvent && (
-              <Chip 
-                label={`${t.lastEvent}: ${lastEvent.event_name} (${formatDateTime(lastEvent.last_event_time)})`} 
-                color="primary" 
-                variant="outlined" 
-                size="small" 
-                sx={{ mr: 1 }}
-              />
-            )}
-            {totalRevenue > 0 && (
-              <Chip 
-                label={`${t.totalRevenue}: ${formatCurrency(totalRevenue)}`} 
-                color="secondary" 
-                variant="outlined" 
-                size="small" 
-              />
-            )}
-          </Box>
-        </Box>
-
-        <TableContainer 
-          component={Paper} 
-          elevation={2}
-          sx={{ 
-            borderRadius: theme.shape.borderRadius,
-            overflow: 'hidden',
-            mb: 3,
-            bgcolor: darkMode ? 'rgba(30, 41, 59, 0.7)' : 'white',
-            '& .MuiTableRow-root:hover': {
-              backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(103, 80, 164, 0.05)'
-            },
-            '& .MuiTableCell-root': {
-              color: darkMode ? 'rgba(255, 255, 255, 0.9)' : 'inherit',
-              borderBottomColor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-            }
-          }}
-        >
-          <Table size="medium">
-            <TableHead>
-              <TableRow sx={{ 
-                bgcolor: darkMode ? 'rgba(25, 50, 100, 0.8)' : 'primary.main',
-                '&:hover': {
-                  bgcolor: darkMode ? 'rgba(35, 60, 110, 0.9)' : 'primary.dark',
-                },
-                textAlign: 'center'
-              }}>
-                <SortableTableHeader field="event_name" label={t.eventName} />
-                <SortableTableHeader field="event_count" label={t.eventCount} />
-                <SortableTableHeader field="first_event_time" label={t.firstEvent} />
-                <SortableTableHeader field="last_event_time" label={t.lastEventColumn} />
-                <SortableTableHeader field="revenue_ltv" label={t.revenueLtv} />
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {sortedEvents.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
-                    <Typography color="text.secondary">{t.noEventData}</Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                sortedEvents.map((event, index) => (
-                  <TableRow 
-                    key={`event-${index}`}
-                    sx={{ 
-                      bgcolor: index % 2 === 0 
-                        ? darkMode 
-                          ? 'rgba(30, 40, 60, 0.5)' 
-                          : 'rgba(240, 240, 250, 0.5)' 
-                        : darkMode 
-                          ? 'rgba(25, 35, 55, 0.3)' 
-                          : 'white',
-                      '&:hover': {
-                        bgcolor: darkMode ? 'rgba(40, 50, 70, 0.7)' : 'rgba(230, 230, 250, 0.7)'
-                      }
-                    }}
-                  >
-                    <TableCell>
-                      <Box display="flex" alignItems="center">
-                        <Chip 
-                          size="small" 
-                          label={event.event_name} 
-                          color={event.revenue_ltv > 0 ? "primary" : "default"}
-                          variant="outlined"
-                          sx={{ 
-                            maxWidth: { xs: '130px', sm: '100%' },
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            whiteSpace: 'nowrap',
-                            borderRadius: '8px'
-                          }}
-                        />
-                      </Box>
-                    </TableCell>
-                    <TableCell>
-                      <Badge 
-                        badgeContent={event.event_count} 
-                        color="primary" 
-                        max={999}
-                        sx={{ '& .MuiBadge-badge': { right: -15, top: 13, borderRadius: '12px' } }}
-                      >
-                        <Box width={20} />
-                      </Badge>
-                    </TableCell>
-                    <TableCell>{formatDateTime(event.first_event_time)}</TableCell>
-                    <TableCell>{formatDateTime(event.last_event_time)}</TableCell>
-                    <TableCell>
-                      {event.revenue_ltv ? (
-                        <Typography 
-                          variant="body2" 
-                          fontWeight={event.revenue_ltv > 0 ? "medium" : "normal"}
-                          color={event.revenue_ltv > 0 ? "primary.main" : "text.primary"}
-                        >
-                          {formatCurrency(event.revenue_ltv)}
-                        </Typography>
-                      ) : (
-                        '-'
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
-
-        {install_info?.notes && (
-          <Paper elevation={1} sx={{ 
-            p: 2, 
-            mb: 2, 
-            bgcolor: darkMode ? 'rgba(30, 41, 59, 0.7)' : 'background.default',
-            color: darkMode ? 'white' : 'inherit',
-            borderRadius: '12px',
-            border: darkMode ? '1px solid rgba(255, 255, 255, 0.05)' : 'none'
-          }}>
-            <Typography variant="body2" color={darkMode ? "rgba(255, 255, 255, 0.7)" : "text.secondary"} gutterBottom>
-              <LocalOffer fontSize="small" sx={{ mr: 1, verticalAlign: 'middle', color: darkMode ? "rgba(255, 255, 255, 0.7)" : "inherit" }} />
-              {t.notes}
-            </Typography>
-            <Typography variant="body1">
-              {install_info.notes}
-            </Typography>
-          </Paper>
-        )}
-      </>
+    
+    // 중복 제거: 동일한 keyspace와 deviceId를 가진 항목 필터링
+    const filteredHistory = searchHistory.filter(
+      item => !(item.keyspace === keyspace && item.deviceId === formattedDeviceId)
     );
-  };
-
-  const formatDateTime = (dateTimeStr) => {
-    if (!dateTimeStr) return "-";
-    try {
-      const date = new Date(dateTimeStr);
-      
-      // 선택된 언어에 따라 다른 locale 포맷 적용
-      let locale = 'ko-KR';
-      let options = { 
-        year: 'numeric', 
-        month: '2-digit', 
-        day: '2-digit', 
-        hour: '2-digit', 
-        minute: '2-digit', 
-        second: '2-digit',
-        hour12: true // 모든 언어에서 12시간제 사용
-      };
-      
-      if (language === 'en') {
-        locale = 'en-US';
-      } else if (language === 'zh') {
-        locale = 'zh-CN';
-      }
-      
-      return date.toLocaleString(locale, options);
-    } catch (e) {
-      return dateTimeStr;
-    }
-  };
-
-  const formatCurrency = (value) => {
-    if (!value) return '-';
     
-    // 화폐 표시를 생략하고 숫자만 표시
-    return new Intl.NumberFormat('en-US', {
-      style: 'decimal',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2
-    }).format(value);
-  };
-
-  // 히스토리에서 항목 선택
-  const selectHistoryItem = (item) => {
-    setApiKey(item.apiKey);
-    setDeviceId(item.deviceId);
-    setKeyspace(item.keyspace);
-    
-    if (item.result) {
-      setResult(item.result);
-      setHasSearched(true);
-      
-      // 앱 아이콘 가져오기
-      if (item.result && Array.isArray(item.result) && item.result.length > 0) {
-        const appData = item.result[0];
-        const { app_long_name } = appData;
-        if (app_long_name) {
-          setAppLongName(app_long_name);
-          fetchAppIcon();
-        }
-      }
-    }
-  };
-
-  // 히스토리에서 항목 삭제
-  const removeHistoryItem = (index, e) => {
-    e.stopPropagation(); // 부모 클릭 이벤트 전파 방지
-    
-    const updatedHistory = [...searchHistory];
-    updatedHistory.splice(index, 1);
+    // 최신 항목 추가 및 최대 10개 유지
+    const updatedHistory = [historyItem, ...filteredHistory.slice(0, 9)];
     setSearchHistory(updatedHistory);
     localStorage.setItem("singular_history", JSON.stringify(updatedHistory));
   };
 
-  // 히스토리 목록 렌더링
-  const renderHistory = () => {
-    if (searchHistory.length === 0) {
-      return (
-        <ListItem>
-          <ListItemText primary={t.noSearchHistory} />
-        </ListItem>
-      );
-    }
-    
-    return searchHistory.map((item, index) => {
-      // 앱 이름 가져오기
-      const appName = item.result && Array.isArray(item.result) && item.result.length > 0 
-        ? item.result[0].app_name 
-        : t.infoMissing;
-      
-      // 키스페이스 표시명 설정
-      let keyspaceDisplay = item.keyspace;
-      if (item.keyspace === "android_advertising_id") {
-        keyspaceDisplay = "GAID";
-      }
-      
-      return (
-        <ListItem key={index} disablePadding>
-          <ListItemButton onClick={() => selectHistoryItem(item)}>
-            <ListItemIcon>
-              <History fontSize="small" />
-            </ListItemIcon>
-            <ListItemText 
-              primary={`${keyspaceDisplay}: ${item.deviceId}`} 
-              secondary={
-                <React.Fragment>
-                  <Typography component="span" variant="body2" color="text.primary">
-                    {appName}
-                  </Typography>
-                  <br />
-                  {new Date(item.timestamp).toLocaleString()}
-                </React.Fragment>
-              } 
-            />
-            <IconButton 
-              edge="end" 
-              aria-label="delete" 
-              onClick={(e) => removeHistoryItem(index, e)}
-              size="small"
-            >
-              <Delete fontSize="small" />
-            </IconButton>
-          </ListItemButton>
-        </ListItem>
-      );
-    });
+  /**
+   * 스낵바 닫기 함수
+   */
+  const handleCloseSnackbar = () => {
+    setOpenSnackbar(false);
   };
 
-  const fadeIn = keyframes`
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  `;
+  // 키스페이스 툴팁 텍스트
+  const keyspaceTooltip = t.keyspaceTooltip;
 
-  // 언어 변경 시 로컬스토리지에 저장
-  useEffect(() => {
-    localStorage.setItem('language', language);
-  }, [language]);
-
-  // 목업 데이터 - 테스트용
-  const mockData = [
-    {
-      app_name: "샘플 앱",
-      app_long_name: "com.example.sampleapp",
-      install_info: {
-        network: "Facebook",
-        install_time: "2023-04-15T12:30:45Z",
-        notes: "샘플 앱 어트리뷰션 데이터입니다."
+  /**
+   * 테마 설정
+   * 다크 모드 여부에 따라 Material UI 테마를 생성합니다.
+   */
+  const theme = useMemo(() => createTheme({
+    palette: {
+      mode: darkMode ? 'dark' : 'light',
+      primary: {
+        main: '#1976d2',
       },
-      events: [
-        {
-          event_name: "App Install",
-          event_count: 1,
-          first_event_time: "2023-04-15T12:30:45Z",
-          last_event_time: "2023-04-15T12:30:45Z",
-          revenue_ltv: 0
+      secondary: {
+        main: '#dc004e',
+      },
+      background: {
+        default: darkMode ? '#0a0e16' : '#f5f5f5',
+        paper: darkMode ? '#151d2a' : '#ffffff',
+      },
+      text: {
+        primary: darkMode ? '#ffffff' : '#1a1a2e',
+        secondary: darkMode ? '#b0b0b0' : '#666666',
+      },
+    },
+    components: {
+      MuiCssBaseline: {
+        styleOverrides: {
+          body: {
+            transition: 'all 0.3s ease',
+          },
         },
-        {
-          event_name: "Level 1 Completed",
-          event_count: 1,
-          first_event_time: "2023-04-15T12:30:45Z",
-          last_event_time: "2023-04-15T12:30:45Z",
-          revenue_ltv: 0
-        },
-        {
-          event_name: "Level 2 Completed",
-          event_count: 1,
-          first_event_time: "2023-04-15T12:30:45Z",
-          last_event_time: "2023-04-15T12:30:45Z",
-          revenue_ltv: 0
-        },
-        {
-          event_name: "Level 3 Completed",
-          event_count: 1,
-          first_event_time: "2023-04-15T12:30:45Z",
-          last_event_time: "2023-04-15T12:30:45Z",
-          revenue_ltv: 0
-        },
-        {
-          event_name: "Level 4 Completed",
-          event_count: 1,
-          first_event_time: "2023-04-15T12:30:45Z",
-          last_event_time: "2023-04-15T12:30:45Z",
-          revenue_ltv: 0
-        },
-        {
-          event_name: "Level 5 Completed",
-          event_count: 1,
-          first_event_time: "2023-04-15T12:30:45Z",
-          last_event_time: "2023-04-15T12:30:45Z",
-          revenue_ltv: 0
-        },
-        {
-          event_name: "Level 6 Completed",
-          event_count: 1,
-          first_event_time: "2023-04-15T12:30:45Z",
-          last_event_time: "2023-04-15T12:30:45Z",
-          revenue_ltv: 0
-        },
-        {
-          event_name: "Level 7 Completed",
-          event_count: 1,
-          first_event_time: "2023-04-15T12:30:45Z",
-          last_event_time: "2023-04-15T12:30:45Z",
-          revenue_ltv: 0
-        },
-        {
-          event_name: "Level 8 Completed",
-          event_count: 1,
-          first_event_time: "2023-04-15T12:30:45Z",
-          last_event_time: "2023-04-15T12:30:45Z",
-          revenue_ltv: 0
-        },
-        {
-          event_name: "Level 9 Completed",
-          event_count: 1,
-          first_event_time: "2023-04-15T12:30:45Z",
-          last_event_time: "2023-04-15T12:30:45Z",
-          revenue_ltv: 0
-        },
-        {
-          event_name: "Level 10 Completed",
-          event_count: 1,
-          first_event_time: "2023-04-15T12:30:45Z",
-          last_event_time: "2023-04-15T12:30:45Z",
-          revenue_ltv: 0
-        }
-      ]
-    }
-  ];
+      },
+    },
+  }), [darkMode]);
 
-  // 시스템 다크모드 감지 설정 - useEffect 추가
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
-    // 시스템 테마 변경 감지 핸들러
-    const handleChange = (e) => {
-      // 사용자가 직접 설정한 경우에는 시스템 설정 무시
-      const userPreference = localStorage.getItem('darkMode');
-      if (userPreference === null) {
-        setDarkMode(e.matches);
-      }
-    };
-    
-    // 이벤트 리스너 등록
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener('change', handleChange);
-    } else {
-      // 이전 브라우저 지원
-      mediaQuery.addListener(handleChange);
-    }
-    
-    // 컴포넌트 언마운트 시 이벤트 리스너 제거
-    return () => {
-      if (mediaQuery.removeEventListener) {
-        mediaQuery.removeEventListener('change', handleChange);
-      } else {
-        mediaQuery.removeListener(handleChange);
-      }
-    };
-  }, []);
+  // Singular 로고 Base64 인코딩 (로고 이미지를 직접 소스 코드에 포함)
+  const singularLogoBase64 = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQvfg-L9ImP6SiqLRxJc03e_jSvaR25KybCHw&s";
+  
+  // Singular 아이콘 Base64 인코딩
+  const singularIconBase64 = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMCAzMCI+PHBhdGggZD0iTTEwLjQgMTEuMkMxMC40IDE3LjUgMCAxNy4zIDAgMjMuN2MwIDQuNCAzIDYuMiA2LjMgNi4yIDUuNCAwIDguNy00LjEgOC43LTlWN2g1LjF2MTMuOWMwIDEwLjEtNy42IDE0LTQuOSAyMy4xLTEuOS0uNi0xNC00LjQtMTQtMTNDMS4zIDIzLjcgMTEgMTQuNCAxMiAxMS4yYzAtMi42LTEuNi0zLTkuMy0yQzMuMiAxLjMgMTEuNSAwIDE2LjEgMGM0LjUgMCA3LjYgMi44IDcuNiA2LjIgMCAzLTIgNS01IDVzLTYtMi42LTYtNS4ydjUuMmMwIDIuNyAyLjIgNC45IDQuOSA0LjlzNS0yLjIgNS00LjlWMEgyNlY2SDEwLjQiIGZpbGw9IiMwMDM5Y2IiLz48L3N2Zz4=";
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Box sx={{ 
-        minHeight: '100vh', 
-        background: darkMode 
-          ? 'linear-gradient(135deg, #0a0e16 0%, #151d2a 100%)' 
-          : 'linear-gradient(135deg, #eef2ff 0%, #ffffff 100%)',
-        color: darkMode ? '#ffffff' : '#1a1a2e',
-        transition: 'all 0.3s ease',
-        display: 'flex',
-        flexDirection: 'column'
+        display: 'flex', 
+        flexDirection: 'column',
+        minHeight: '100vh',
+        backgroundColor: theme.palette.background.default,
+        transition: 'background-color 0.3s ease'
       }}>
         <AppBar 
           position="static" 
-          elevation={0} 
-          color="transparent" 
+          color="primary"
+          elevation={0}
           sx={{ 
-            transition: 'all 0.3s ease',
-            backdropFilter: 'blur(10px)',
-            backgroundColor: darkMode ? 'rgba(21, 29, 42, 0.8)' : 'rgba(255, 255, 255, 0.8)',
-            borderBottom: `1px solid ${darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
+            borderBottom: `1px solid ${theme.palette.divider}`,
+            backgroundColor: theme.palette.background.paper,
+            color: theme.palette.text.primary
           }}
         >
-          <Toolbar sx={{ justifyContent: 'space-between' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          <Toolbar>
+            <Box 
+              component="div" 
+              sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                flexGrow: 1,
+                cursor: 'pointer' 
+              }}
+              onClick={() => {
+                // 홈으로 이동 (페이지 새로고침)
+                window.location.href = '/';
+              }}
+            >
               <img 
-                src={singularLogoBase64} 
+                src={singularIconBase64} 
                 alt="Singular Logo" 
                 style={{ 
                   height: '30px', 
                   marginRight: '10px',
-                  filter: darkMode ? 'brightness(0.9)' : 'none'
+                  filter: darkMode ? 'brightness(0.8)' : 'none'
                 }} 
               />
-              <Typography variant="h6" component="div" sx={{ flexGrow: 1, fontWeight: 'bold' }}>
-                {translations[language].title}
+              <Typography 
+                variant="h6" 
+                component="div" 
+                sx={{ 
+                  flexGrow: 1,
+                  fontWeight: 'bold',
+                  letterSpacing: '0.5px'
+                }}
+              >
+                {t.title}
               </Typography>
             </Box>
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -1385,423 +871,8 @@ export default function SingularDebugger({ systemTheme }) {
             </Box>
           </Toolbar>
         </AppBar>
-        
-        <Container maxWidth="xl" sx={{ py: 4, flexGrow: 1 }}>
-          {!hasSearched ? (
-            // 첫 화면 - 쿼리 파라미터만 가운데에 표시
-            <Fade in={true} timeout={800}>
-              <Box display="flex" justifyContent="center" flexDirection="column" alignItems="center">
-                <Card 
-                  sx={{ 
-                    maxWidth: '500px', 
-                    width: '100%', 
-                    mb: 2,
-                    overflow: 'visible',
-                    animation: `${fadeIn} 0.5s ease-out`
-                  }}
-                >
-                  <CardContent sx={{ p: 3 }}>
-                    <Typography variant="h6" gutterBottom color="primary">{t.queryParams}</Typography>
-                    
-                    <Box sx={{ position: 'relative', mt: 2 }}>
-                      <TextField
-                        label={t.apiKeyLabel}
-                        variant="outlined"
-                        fullWidth
-                        margin="normal"
-                        value={apiKey}
-                        onChange={(e) => setApiKey(e.target.value)}
-                        InputProps={{
-                          startAdornment: (
-                            <Key color="action" sx={{ mr: 1 }} />
-                          ),
-                        }}
-                      />
-                    </Box>
-                    
-                    <Box display="flex" alignItems="center" mt={2}>
-                      <FormControl fullWidth margin="normal">
-                        <InputLabel id="keyspace-label">{t.keyspaceLabel}</InputLabel>
-                        <Select
-                          labelId="keyspace-label"
-                          value={keyspace}
-                          label={t.keyspaceLabel}
-                          onChange={handleKeyspaceChange}
-                        >
-                          <MenuItem value="" disabled>{t.selectKeyspace}</MenuItem>
-                          <MenuItem value="idfa">IDFA</MenuItem>
-                          <MenuItem value="idfv">IDFV</MenuItem>
-                          <MenuItem value="android_advertising_id">AIFA (GAID)</MenuItem>
-                          <MenuItem value="custom">SDID</MenuItem>
-                        </Select>
-                      </FormControl>
-                      <Tooltip title={keyspaceTooltip} placement="right" arrow>
-                        <IconButton size="small" sx={{ ml: 1, mt: 1 }}>
-                          <InfoOutlined fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                    
-                    <Box sx={{ position: 'relative' }}>
-                      <TextField
-                        label={t.deviceIdLabel}
-                        variant="outlined"
-                        fullWidth
-                        margin="normal"
-                        value={deviceId}
-                        onChange={handleDeviceIdChange}
-                        error={!!deviceIdError}
-                        helperText={deviceIdError}
-                        InputProps={{
-                          startAdornment: (
-                            <Fingerprint color="action" sx={{ mr: 1 }} />
-                          ),
-                        }}
-                      />
-                    </Box>
-
-                    <Box mt={4} display="flex" justifyContent="center">
-                      <Button 
-                        variant="contained" 
-                        color="primary" 
-                        onClick={fetchAttribution} 
-                        disabled={loading}
-                        fullWidth
-                        sx={{ 
-                          py: 1.5,
-                          background: 'linear-gradient(to right, #2962ff, #3d5afe)',
-                          '&:hover': {
-                            background: 'linear-gradient(to right, #0039cb, #2962ff)'
-                          }
-                        }}
-                      >
-                        {loading ? <CircularProgress size={24} color="inherit" /> : t.searchButton}
-                      </Button>
-                    </Box>
-
-                    {error && (
-                      <Alert severity="error" sx={{ mt: 2 }}>
-                        <Typography variant="subtitle2">{error.message}</Typography>
-                        <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
-                          {t.checkApiKeyAndDevice}
-                        </Typography>
-                      </Alert>
-                    )}
-                  </CardContent>
-                </Card>
-                
-                {searchHistory.length > 0 && (
-                  <Grow in={true} timeout={600} style={{ transformOrigin: '0 0 0' }}>
-                    <Card sx={{ maxWidth: '500px', width: '100%', overflow: 'hidden' }}>
-                      <ListItemButton onClick={toggleHistory} sx={{ borderRadius: 0 }}>
-                        <ListItemIcon>
-                          <History color="primary" />
-                        </ListItemIcon>
-                        <ListItemText 
-                          primary={t.historyTitle} 
-                          primaryTypographyProps={{ fontWeight: 'medium' }}
-                        />
-                        {historyOpen ? <ExpandLess /> : <ExpandMore />}
-                      </ListItemButton>
-                      <Collapse in={historyOpen} timeout="auto" unmountOnExit>
-                        <List component="div" disablePadding>
-                          {renderHistory()}
-                        </List>
-                      </Collapse>
-                    </Card>
-                  </Grow>
-                )}
-              </Box>
-            </Fade>
-          ) : (
-            // 검색 후 레이아웃 - 30:70 분할 화면 (모바일에서는 상하 배치)
-            <Grid container spacing={3}>
-              {/* 입력 부분 (데스크톱: 30%, 모바일: 100%) */}
-              <Grid item xs={12} md={4} sx={{ transition: 'all 0.3s ease' }}>
-                <Fade in={true} timeout={500}>
-                  <div>
-                    <Card elevation={3}>
-                      <CardContent sx={{ p: 3 }}>
-                        <Typography variant="h6" gutterBottom color="primary">{t.queryParams}</Typography>
-                        
-                        <Box sx={{ position: 'relative', mt: 2 }}>
-                          <TextField
-                            label={t.apiKeyLabel}
-                            variant="outlined"
-                            fullWidth
-                            margin="normal"
-                            value={apiKey}
-                            onChange={(e) => setApiKey(e.target.value)}
-                            sx={{ mb: 2 }}
-                          />
-                        </Box>
-                        
-                        <Box display="flex" alignItems="center" mt={2}>
-                          <FormControl fullWidth margin="normal">
-                            <InputLabel id="keyspace-label">{t.keyspaceLabel}</InputLabel>
-                            <Select
-                              labelId="keyspace-label"
-                              id="keyspace"
-                              value={keyspace}
-                              label={t.keyspaceLabel}
-                              onChange={(e) => setKeyspace(e.target.value)}
-                            >
-                              <MenuItem value="idfa">IDFA</MenuItem>
-                              <MenuItem value="idfv">IDFV</MenuItem>
-                              <MenuItem value="android_advertising_id">Android Advertising ID</MenuItem>
-                              <MenuItem value="fire_advertising_id">Fire Advertising ID</MenuItem>
-                            </Select>
-                          </FormControl>
-                          <Tooltip title={keyspaceTooltip} placement="right" arrow>
-                            <IconButton size="small" sx={{ ml: 1, mt: 1 }}>
-                              <InfoOutlined fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                        
-                        <Box sx={{ position: 'relative' }}>
-                          <TextField
-                            label={t.deviceIdLabel}
-                            variant="outlined"
-                            fullWidth
-                            margin="normal"
-                            value={deviceId}
-                            onChange={handleDeviceIdChange}
-                            error={!!deviceIdError}
-                            helperText={deviceIdError}
-                            sx={{ mb: 2 }}
-                          />
-                        </Box>
-
-                        <Box mt={4} display="flex" justifyContent="center">
-                          <Button 
-                            variant="contained" 
-                            color="primary" 
-                            onClick={fetchAttribution} 
-                            disabled={loading}
-                            fullWidth
-                            sx={{ 
-                              py: 1.5,
-                              background: 'linear-gradient(to right, #2962ff, #3d5afe)',
-                              '&:hover': {
-                                background: 'linear-gradient(to right, #0039cb, #2962ff)'
-                              }
-                            }}
-                          >
-                            {loading ? <CircularProgress size={24} color="inherit" /> : t.searchButton}
-                          </Button>
-                        </Box>
-
-                        {error && (
-                          <Alert severity="error" sx={{ mt: 2 }}>
-                            <Typography variant="subtitle2">{error.message}</Typography>
-                            <Typography variant="body2" sx={{ fontSize: '0.75rem' }}>
-                              {t.checkApiKeyAndDevice}
-                            </Typography>
-                          </Alert>
-                        )}
-                      </CardContent>
-                    </Card>
-                    
-                    {searchHistory.length > 0 && (
-                      <Fade in={true} timeout={800}>
-                        <Card elevation={3} sx={{ mt: 3, overflow: 'hidden' }}>
-                          <ListItemButton onClick={toggleHistory} sx={{ borderRadius: 0 }}>
-                            <ListItemIcon>
-                              <History color="primary" />
-                            </ListItemIcon>
-                            <ListItemText 
-                              primary={t.historyTitle} 
-                              primaryTypographyProps={{ fontWeight: 'medium' }}
-                            />
-                            {historyOpen ? <ExpandLess /> : <ExpandMore />}
-                          </ListItemButton>
-                          <Collapse in={historyOpen} timeout="auto" unmountOnExit>
-                            <List component="div" disablePadding>
-                              {renderHistory()}
-                            </List>
-                          </Collapse>
-                        </Card>
-                      </Fade>
-                    )}
-                  </div>
-                </Fade>
-              </Grid>
-
-              {/* 결과 부분 (데스크톱: 70%, 모바일: 100%) */}
-              <Grid item xs={12} md={8} sx={{ transition: 'all 0.3s ease' }}>
-                <Fade in={true} timeout={700}>
-                  <Card 
-                    elevation={3} 
-                    sx={{ 
-                      height: '100%', 
-                      minHeight: isMobile ? '500px' : '600px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      overflow: 'hidden',
-                      background: darkMode ? 'rgba(15, 23, 42, 0.8)' : 'white',
-                      boxShadow: darkMode ? '0 8px 32px rgba(0, 0, 0, 0.5)' : '0 8px 32px rgba(0, 0, 0, 0.1)',
-                      border: darkMode ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
-                      borderRadius: '12px'
-                    }}
-                  >
-                    <Box 
-                      sx={{ 
-                        p: 2, 
-                        borderBottom: '1px solid',
-                        borderColor: 'divider',
-                        display: 'flex',
-                        alignItems: 'center',
-                        bgcolor: darkMode ? 'background.paper' : 'primary.light',
-                        color: darkMode ? 'text.primary' : 'white',
-                        borderTopLeftRadius: 8,
-                        borderTopRightRadius: 8,
-                        transition: 'background-color 0.3s ease'
-                      }}
-                    >
-                      <Typography variant="h6" component="div" fontWeight="medium" mb={1}>
-                        {t.appHeaderTitle}
-                      </Typography>
-                    </Box>
-                    
-                    <CardContent 
-                      sx={{ 
-                        p: 3, 
-                        flexGrow: 1,
-                        overflowY: 'auto'
-                      }}
-                    >                    
-                      {loading && (
-                        <Fade in={loading} timeout={300}>
-                          <Box 
-                            display="flex" 
-                            flexDirection="column"
-                            justifyContent="center" 
-                            alignItems="center" 
-                            sx={{ height: '400px' }}
-                          >
-                            <CircularProgress size={60} sx={{ mb: 2 }} />
-                            <Typography variant="body1">{t.loadingData}</Typography>
-                            <Typography variant="body2" color="text.secondary">{t.loadingFromApi}</Typography>
-                          </Box>
-                        </Fade>
-                      )}
-                      
-                      {result && !loading && (
-                        <Fade in={!loading && !!result} timeout={500}>
-                          <div>{renderExcelTable()}</div>
-                        </Fade>
-                      )}
-                      
-                      {!result && !loading && !error && (
-                        <Fade in={!loading && !result && !error} timeout={500}>
-                          <Box 
-                            display="flex" 
-                            flexDirection="column"
-                            justifyContent="center" 
-                            alignItems="center" 
-                            sx={{ 
-                              height: '500px', 
-                              border: '1px dashed',
-                              borderColor: 'divider',
-                              borderRadius: 4,
-                              backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.05)' : 'rgba(103, 80, 164, 0.05)' 
-                            }}
-                          >
-                            <Box 
-                              component="img" 
-                              src={singularIconBase64}
-                              sx={{ width: 60, height: 60, opacity: 0.2, mb: 2 }}
-                            />
-                            <Typography variant="h6" color="text.secondary" gutterBottom>
-                              {t.resultsShownHere}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary" align="center" sx={{ maxWidth: '80%' }}>
-                              {t.enterParamsInstruction}
-                            </Typography>
-                          </Box>
-                        </Fade>
-                      )}
-                      
-                      {error && !loading && (
-                        <Zoom in={!loading && !!error} timeout={500}>
-                          <Box 
-                            sx={{ 
-                              mt: 2, 
-                              p: 3, 
-                              border: '1px solid',
-                              borderColor: 'error.light',
-                              borderRadius: 2,
-                              bgcolor: 'error.light',
-                              color: 'error.contrastText'
-                            }}
-                          >
-                            <Typography variant="h6" gutterBottom>
-                              {t.requestFailed}
-                            </Typography>
-                            <Typography variant="body1" paragraph>
-                              {error.message}
-                            </Typography>
-                            {error.detail && (
-                              <Paper sx={{ p: 2, mt: 2, bgcolor: darkMode ? 'background.paper' : 'background.default' }}>
-                                <pre style={{ 
-                                  overflowX: 'auto', 
-                                  margin: 0,
-                                  fontSize: '0.75rem',
-                                  fontFamily: 'monospace'
-                                }}>
-                                  {typeof error.detail === 'string' && error.detail.includes('<!DOCTYPE html>') 
-                                    ? t.htmlResponseError 
-                                    : JSON.stringify(error.detail, null, 2)}
-                                </pre>
-                              </Paper>
-                            )}
-                          </Box>
-                        </Zoom>
-                      )}
-                    </CardContent>
-                  </Card>
-                </Fade>
-              </Grid>
-            </Grid>
-          )}
-        </Container>
-        
-        {/* Footer */}
-        <Box 
-          component="footer" 
-          sx={{ 
-            py: 2, 
-            textAlign: 'center',
-            borderTop: `1px solid ${darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}`,
-            backgroundColor: darkMode ? 'rgba(21, 29, 42, 0.8)' : 'rgba(255, 255, 255, 0.8)',
-            backdropFilter: 'blur(10px)',
-            mt: 'auto'
-          }}
-        >
-          <Typography variant="body2" color={darkMode ? 'text.secondary' : 'text.primary'}>
-            &copy; {t.footer}
-          </Typography>
-        </Box>
+        {/* ... */}
       </Box>
-      <Snackbar
-        open={openSnackbar}
-        autoHideDuration={6000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        TransitionComponent={Zoom}
-      >
-        <Alert 
-          onClose={handleCloseSnackbar} 
-          severity="warning" 
-          sx={{ 
-            width: '100%',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-          }}
-        >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
     </ThemeProvider>
   );
 }
